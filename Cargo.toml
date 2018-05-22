@@ -1,0 +1,15 @@
+[package]
+name = "xonix-coding-game"
+version = "0.1.0"
+keywords = ["xonix", "coding", "game"]
+authors = ["Nick Linker <nlinker@gmail.com>"]
+
+[lib]
+name = "xonix"
+
+[[bin]]
+name = "xonix-app"
+path = "src/main.rs"
+
+[dependencies]
+itertools = "0.7.8"
