@@ -2,7 +2,7 @@ extern crate itertools;
 
 use std::iter::Iterator;
 use self::itertools::Itertools;
-//use std::slice::Iter;
+use std::slice::Iter;
 
 pub fn trim_indent(src: &str) -> &str {
     replace_indent(&src, &"")
@@ -18,25 +18,27 @@ pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> &'a str {
     println!("min_common_indent = {:?}", min_common_indent);
     let exp_size = src.len() + new_indent.len() * lines.len();
     //let _: Iter<&str> = lines.iter();
-    //let f1: Box<Fn(&str) -> &str> = get_add_function(&new_indent);
-    //let f2: Box<Fn(&str) -> &str> = get_cut_function(min_common_indent);
-    // reindent(lines.iter(), exp_size, f1, f2)
+    let f1 = get_add_function(&new_indent);
+    let f2 = get_cut_function(min_common_indent);
+    reindent(lines.iter(), exp_size, f1, f2);
     src
 }
 
-//pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> &str + 'static> {
-//    Box::new(move |line: &str| &format!("{}{}", indent, line)[..] )
-//    // if indent.is_empty() { |l| l } else { |l| indent + l }
-//}
-//
-//pub fn get_cut_function(min_common_indent: usize) -> Box<Fn(&str) -> &str + 'static> {
-//    Box::new(move |line: &str| { &line[min_common_indent..] })
-//}
+pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String + 'a> {
+    Box::new(move |line: &str| format!("{}{}", indent, line))
+}
 
-//pub fn reindent<'a, F1, F2>(xs: Iter<&str>, exp_size: usize, indent_add_f: F1, indent_cut_f: F2) -> &'a str
+pub fn get_cut_function(min_common_indent: usize) -> Box<Fn(&str) -> String> {
+    Box::new(move |line: &str| { line[min_common_indent..].to_string() })
+}
+
+//pub fn reindent<'a, F1, F2>(xs: Iter<&str>,
+//                            exp_size: usize,
+//                            indent_add_f: Box<F1>,
+//                            indent_cut_f: Box<F2>) -> String
 //    where
-//        F1: Fn(&'a str) -> &'a str,
-//        F1: Fn(&'a str) -> &'a str,
+//        F1: Fn(&'a str) -> String,
+//        F1: Fn(&'a str) -> String,
 //{
 //    unimplemented!()
 ////private inline fun List<String>.reindent(resultSizeEstimate: Int,

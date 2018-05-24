@@ -19,9 +19,9 @@ fn main() {
     println!("trim_indent = {}", trim_indent(&gs0))
 }
 
-fn make_str_adder<'a>(a: &'a str) -> Box<Fn(&str) -> String + 'static> {
+fn make_str_adder<'a>(a: &'a str) -> Box<Fn(&str) -> String + 'a> {
     if a.chars().all(|c| c.is_ascii_whitespace()) {
-        Box::new(move |l| String::from(l))
+        Box::new(|l| String::from(l))
     } else {
         Box::new(move |l| {
             let mut r = String::new();
