@@ -1,11 +1,23 @@
+#![allow(unused)]
+
 extern crate itertools;
 
 use std::iter::Iterator;
 use self::itertools::Itertools;
 use std::slice::Iter;
 
-pub fn trim_indent(src: &str) -> &str {
-    replace_indent(&src, &"")
+fn undef() -> ! {
+    unimplemented!()
+}
+
+pub trait Tr {
+    fn trim_indent(self) -> Self;
+}
+
+impl<'a> Tr for &'a str {
+    fn trim_indent(self) -> Self {
+        replace_indent(&self, &"")
+    }
 }
 
 pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> &'a str {
@@ -15,12 +27,13 @@ pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> &'a str {
         .map(|s| indent_width(s))
         .min()
         .unwrap_or(0);
+    let exp_size = src.len() + new_indent.len() * lines.len();
     println!("min_common_indent = {:?}", min_common_indent);
-    let _exp_size = src.len() + new_indent.len() * lines.len();
     //let _: Iter<&str> = lines.iter();
-    let _f1 = get_add_function(&new_indent);       // Box<Fn<(&str), Output=String>>
-    let _f2 = get_cut_function(min_common_indent); // Box<Fn<(&str), Output=String>>
-    // reindent(lines.iter(), exp_size, f1, f2);
+    let f1: Box<Fn(&str) -> String> = get_add_function(&new_indent);
+    let f2: Box<Fn(&str) -> String> = get_cut_function(min_common_indent);
+    let s = reindent(&lines, exp_size, f1, f2);
+    println!("{}", s);
     src
 }
 
@@ -32,14 +45,16 @@ pub fn get_cut_function(min_common_indent: usize) -> Box<Fn(&str) -> String> {
     Box::new(move |line: &str| { line[min_common_indent..].to_string() })
 }
 
-pub fn reindent<F1, F2>(_xs: Iter<&str>,
-                        _exp_size: usize,
-                        _indent_add_f: Box<F1>,
-                        _indent_cut_f: Box<F2>) -> String
-    where
-        F1: Fn(&str) -> String + Sized,
-        F1: Fn(&str) -> String + Sized,
+pub fn reindent<F1, F2>(
+    xs: &[&str],
+    exp_size: usize,
+    indent_add_f: Box<F1>,
+    indent_cut_f: Box<F2>,
+) -> String where
+    F1: for<'a> Fn(&'a str) -> String + ?Sized,
+    F2: for<'a> Fn(&'a str) -> String + ?Sized,
 {
+    let mut result = String::new();
     unimplemented!()
 //private inline fun List<String>.reindent(resultSizeEstimate: Int,
 //                                         indentAddFunction: (String) -> String,

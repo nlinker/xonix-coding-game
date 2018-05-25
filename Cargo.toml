@@ -1,14 +1,14 @@
 [package]
-name = "xonix-coding-game"
+name = "xcg-coding-game"
 version = "0.1.0"
-keywords = ["xonix", "coding", "game"]
+keywords = ["xcg", "coding", "game"]
 authors = ["Nick Linker <nlinker@gmail.com>"]
 
 [lib]
-name = "xonix"
+name = "xcg"
 
 [[bin]]
-name = "xonix-app"
+name = "xcg-app"
 path = "src/main.rs"
 
 [dependencies]
