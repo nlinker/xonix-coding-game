@@ -1,74 +1,74 @@
-#![allow(unused)]
-
 extern crate itertools;
 
+use std::cmp;
 use std::iter::Iterator;
 use self::itertools::Itertools;
-use std::slice::Iter;
 
-fn undef() -> ! {
-    unimplemented!()
+//fn undef() -> ! {
+//    unimplemented!()
+//}
+
+pub trait Trim {
+    fn trim_indent(self) -> String;
+    fn replace_indent(self, new_indent: &str) -> String;
 }
 
-pub trait Tr {
-    fn trim_indent(self) -> Self;
-}
-
-impl<'a> Tr for &'a str {
-    fn trim_indent(self) -> Self {
-        replace_indent(&self, &"")
+impl<'a> Trim for &'a str {
+    fn trim_indent(self) -> String {
+        replace_indent(self, &"")
+    }
+    fn replace_indent(self, new_indent: &str) -> String {
+        replace_indent(self, new_indent)
     }
 }
 
-pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> &'a str {
+pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> String {
     let lines = src.lines().collect_vec();
     let min_common_indent = lines.iter()
         .filter(|s| !is_blank(&s))
         .map(|s| indent_width(s))
         .min()
         .unwrap_or(0);
-    let exp_size = src.len() + new_indent.len() * lines.len();
-    println!("min_common_indent = {:?}", min_common_indent);
-    //let _: Iter<&str> = lines.iter();
-    let f1: Box<Fn(&str) -> String> = get_add_function(&new_indent);
+    let f1: Box<Fn(&str) -> String> = get_add_function(new_indent);
     let f2: Box<Fn(&str) -> String> = get_cut_function(min_common_indent);
-    let s = reindent(&lines, exp_size, f1, f2);
-    println!("{}", s);
-    src
+    reindent(&lines, src.len(), f1, f2)
 }
 
-pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String + 'a> {
-    Box::new(move |line: &str| format!("{}{}", indent, line))
+pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String> {
+    if indent.is_empty() {
+        Box::new(move |line: &str| { line.to_string() })
+    } else {
+        Box::new(move |line: &str| {
+//            let mut s: String = indent.clone().to_string();
+//            s.push_str(line);
+            line.to_string()
+        })
+    }
 }
 
-pub fn get_cut_function(min_common_indent: usize) -> Box<Fn(&str) -> String> {
-    Box::new(move |line: &str| { line[min_common_indent..].to_string() })
+pub fn get_cut_function(indent: usize) -> Box<Fn(&str) -> String> {
+    Box::new(move |line: &str| {
+        // ensure all our values >= 0
+        let n = cmp::max(1, line.len()) - 1;
+        let idx = cmp::min(n, indent);
+        line[idx..].to_string()
+    })
 }
 
-pub fn reindent<F1, F2>(
-    xs: &[&str],
-    exp_size: usize,
-    indent_add_f: Box<F1>,
-    indent_cut_f: Box<F2>,
-) -> String where
-    F1: for<'a> Fn(&'a str) -> String + ?Sized,
-    F2: for<'a> Fn(&'a str) -> String + ?Sized,
+pub fn reindent<F>(xs: &[&str], exp_size: usize, indent_add_f: Box<F>, indent_cut_f: Box<F>) -> String
+    where
+        F: for<'a> Fn(&'a str) -> String + ?Sized,
 {
-    let mut result = String::new();
-    unimplemented!()
-//private inline fun List<String>.reindent(resultSizeEstimate: Int,
-//                                         indentAddFunction: (String) -> String,
-//                                         indentCutFunction: (String) -> String?): String {
-//    val lastIndex = lastIndex
-//    return mapIndexedNotNull { index, value ->
-//            if ((index == 0 || index == lastIndex) && value.isBlank())
-//                null
-//            else
-//                indentCutFunction(value)?.let(indentAddFunction) ?: value
-//        }
-//        .joinTo(StringBuilder(resultSizeEstimate), "\n")
-//        .toString()
-//}
+    let mut ys: Vec<String> = Vec::new();
+    let last_index = xs.len() - 1;
+    for (i, x) in xs.iter().enumerate() {
+        if i != 0 && i != last_index || !is_blank(x) {
+            let x1 = indent_cut_f(x);
+            let x2 = indent_add_f(x1.as_str());
+            ys.push(x2);
+        }
+    }
+    ys.join("\n")
 }
 
 pub fn indent_width(s: &str) -> usize {

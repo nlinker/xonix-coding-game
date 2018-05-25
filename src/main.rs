@@ -1,14 +1,15 @@
 pub mod utils;
 
-use utils::Tr;
+use utils::Trim;
 
 fn main() {
     let gs0 = r#"
-            *.*.*.*.*.*.*.
-            *. . . . . .*.
-            *. . . . A .*.
-            *. . . . B .*.
-            *.*.*.*.*.*.*.
+            aaa
+           bbb
+          ccc
+
+        ddd
         "#;
-    println!("trim_indent = {}", gs0.trim_indent());
+    println!("trim_indent = \n{}", gs0.trim_indent());
+    println!("replace_indent = \n{}", gs0.replace_indent(">>>>"));
 }
