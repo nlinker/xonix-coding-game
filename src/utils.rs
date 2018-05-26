@@ -34,14 +34,15 @@ pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> String {
     reindent(&lines, src.len(), f1, f2)
 }
 
-pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String> {
+pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String + 'a> {
     if indent.is_empty() {
         Box::new(move |line: &str| { line.to_string() })
     } else {
         Box::new(move |line: &str| {
-//            let mut s: String = indent.clone().to_string();
-//            s.push_str(line);
-            line.to_string()
+            let mut s = String::new();
+            s.push_str(indent);
+            s.push_str(line);
+            s
         })
     }
 }
@@ -59,10 +60,10 @@ pub fn reindent<F>(xs: &[&str], exp_size: usize, indent_add_f: Box<F>, indent_cu
     where
         F: for<'a> Fn(&'a str) -> String + ?Sized,
 {
-    let mut ys: Vec<String> = Vec::new();
-    let last_index = xs.len() - 1;
+    let mut ys: Vec<String> = Vec::with_capacity(exp_size);
     for (i, x) in xs.iter().enumerate() {
-        if i != 0 && i != last_index || !is_blank(x) {
+        // exclude the first and the last line, skip blanks
+        if i != 0 && i + 1 != xs.len() || !is_blank(x) {
             let x1 = indent_cut_f(x);
             let x2 = indent_add_f(x1.as_str());
             ys.push(x2);
