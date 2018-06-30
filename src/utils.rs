@@ -7,8 +7,6 @@ use std::cmp;
 use std::fmt;
 use std::iter::Iterator;
 use self::itertools::Itertools;
-use self::rand::prng::isaac::IsaacCore;
-use self::rand_core::block::BlockRng;
 use self::core::num::Wrapping as W;
 
 //fn undef() -> ! {

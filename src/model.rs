@@ -4,6 +4,9 @@
 extern crate itertools;
 
 use std::str::FromStr;
+use std::fmt;
+use std::fmt::Formatter;
+use std::error::Error;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -52,14 +55,38 @@ struct GameState {
 
 struct Player(Vec<Point>);
 
+#[derive(Debug)]
 struct ParseError;
 
-impl FromStr for GameState {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Err(ParseError)
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "ParseError is here!") }
+}
+
+impl Error for ParseError {
+    fn description(&self) -> &str { "Cannot parse the string to GameState" }
+    fn cause(&self) -> Option<&Error> { None }
+}
+
+impl GameState {
+    fn parse_string(s: &str) -> Result<GameState, ParseError> {
+        return Err(ParseError)
     }
 }
+
+//struct ParseError;
+//
+//impl FromStr for GameState {
+//    type Err = ParseError;
+//    fn from_str(s: &str) -> Result<Self, Self::Err> {
+//        Err(ParseError)
+//    }
+//}
+//
+//impl fmt::Display for GameState {
+//    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+//        unimplemented!()
+//    }
+//}
 
 //#[stable(feature = "rust1", since = "1.0.0")]
 //impl fmt::Display for Utf8Error {
