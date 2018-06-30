@@ -13,3 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 itertools = "0.7.8"
+rand = "0.5.3"
+rand_core = "0.2.1"
+byteorder = "1.2.3"
+derivative = "1.0.0"

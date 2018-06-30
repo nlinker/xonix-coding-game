@@ -1,8 +1,15 @@
+extern crate core;
+extern crate rand_core;
 extern crate itertools;
+extern crate rand;
 
 use std::cmp;
+use std::fmt;
 use std::iter::Iterator;
 use self::itertools::Itertools;
+use self::rand::prng::isaac::IsaacCore;
+use self::rand_core::block::BlockRng;
+use self::core::num::Wrapping as W;
 
 //fn undef() -> ! {
 //    unimplemented!()
@@ -80,4 +87,36 @@ pub fn is_blank(s: &str) -> bool {
     s.len() == 0 ||
         s.char_indices()
             .all(|(_, c)| c.is_ascii_whitespace())
+}
+
+const RAND_SIZE_LEN: usize = 8;
+const RAND_SIZE: usize = 1 << RAND_SIZE_LEN;
+
+#[derive(Clone, Debug)]
+pub struct IsaacRng0(pub BlockRng0<IsaacCore0>);
+
+#[derive(Clone, Debug)]
+pub struct BlockRng0<R: ?Sized> {
+    pub results: u32,
+    pub index: usize,
+    pub core: R,
+}
+
+#[derive(Clone)]
+pub struct IsaacCore0 {
+    mem: [W<u32>; RAND_SIZE],
+    a: W<u32>,
+    b: W<u32>,
+    c: W<u32>,
+}
+
+impl fmt::Debug for IsaacCore0 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.debug_struct("IsaacCore0")
+            .field("mem", &format_args!("{:?}", &self.mem[..]))
+            .field("a", &format_args!("{}", self.a))
+            .field("b", &format_args!("{}", self.b))
+            .field("c", &format_args!("{}", self.c))
+            .finish()
+    }
 }

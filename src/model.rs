@@ -17,7 +17,7 @@ enum Cell {
 struct Point(u16, u16);
 
 enum Move {
-    Right, Up, Left, Down, Stop
+    Right, Up, Left, Down, Stop,
 }
 
 /// Field contains the information about the terrain
@@ -30,20 +30,27 @@ struct Field {
     cells: Vec<Vec<Cell>>,
 }
 
+/// Stats is updated on each step according to the things happened
 struct Stats {
+    iteration: u16,
     filled_count: u16,
-    bite_count: u16,
+    head_to_head_count: u16,
     ouroboros_count: u16,
+    bite_count: u16,
+    scores: Vec<u16>,
 }
 
-/// _pids_ is player ids, usually it is a database key
+/// _player_names_ is player names
 struct GameState {
     field: Field,
-    pids: Vec<i32>,
-    players: Vec<Vec<Point>>,
+    player_names: Vec<String>,
+    players: Vec<Player>,
     origins: Vec<Point>,
-    monster: Point
+    // monsters: Vec<Point>,
+    reordering: Vec<u8>,
 }
+
+struct Player(Vec<Point>);
 
 struct ParseError;
 

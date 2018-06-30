@@ -1,15 +1,28 @@
+#![allow(unused)]
+
 pub mod utils;
 
-use utils::Trim;
+extern crate rand;
+extern crate byteorder;
+extern crate xcg;
+
+use rand::prelude::{RngCore, SeedableRng, SmallRng, FromEntropy};
+use rand::prng::XorShiftRng;
+use rand::IsaacRng;
+use byteorder::{ByteOrder, LittleEndian};
+use std::mem::transmute_copy;
+use utils::IsaacRng0;
 
 fn main() {
-    let gs0 = r#"
-            aaa
-           bbb
-          ccc
+//    let mut rng = IsaacRng::new_from_u64(123456u64);
+    let mut rng = IsaacRng::from_entropy();
+    let rng0: IsaacRng0 = unsafe { transmute_copy(&rng) };
+    println!("{:?}", rng0);
 
-        ddd
-        "#;
-    println!("trim_indent = \n{}", gs0.trim_indent());
-    println!("replace_indent = \n{}", gs0.replace_indent(">>>>"));
+    let mut results = [0u32; 20];
+    for i in results.iter_mut() {
+        *i = rng.next_u32();
+    }
+    println!("{:?}", results);
+    println!("rng: {:?}", rng);
 }
