@@ -44,7 +44,7 @@ struct Stats {
 }
 
 /// _player_names_ is player names
-struct GameState {
+pub struct GameState {
     field: Field,
     player_names: Vec<String>,
     players: Vec<Player>,
@@ -56,7 +56,7 @@ struct GameState {
 struct Player(Vec<Point>);
 
 #[derive(Debug)]
-struct ParseError;
+pub struct ParseError;
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "ParseError is here!") }
@@ -68,8 +68,42 @@ impl Error for ParseError {
 }
 
 impl GameState {
-    fn parse_string(s: &str) -> Result<GameState, ParseError> {
+    pub fn parse_string(str: &str) -> Result<GameState, ParseError> {
+        // detect sizes
+        let raw_lines: Vec<&str> = str.split("\n")
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        let mut lines: Vec<&str> = Vec::with_capacity(raw_lines.len());
+        let mut rest: Vec<&str> = Vec::new();
+        for s in raw_lines {
+            if s.starts_with("*") {
+                lines.push(s);
+            } else {
+                rest.push(s);
+            }
+        }
+        let m = lines.len();
+        let n = lines.iter().map(|it| it.len() / 2).max().unwrap_or(0);
+//        for c in lines[0].chars() {
+//            let () = c;
+//        };
+        let mut layer0_raw: Vec<char> = vec!['\0'; m * n];
+        // let layer0 = new char[m][n];
+        // let layer1 = new char[m][n];
+        eprintln!("lines = {:#?}", lines);
+        eprintln!("rest = {:#?}", rest);
+        eprintln!("m, n = {:#?}, {:#?}", m, n);
+
         return Err(ParseError)
+    }
+}
+
+impl fmt::Debug for GameState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(&self.field.m.to_string());
+        f.write_str(&self.field.n.to_string());
+        Ok(())
     }
 }
 

@@ -5,6 +5,7 @@ extern crate rand;
 mod test {
 
     use xcg::utils::Trim;
+    use xcg::model::*;
     use rand::IsaacRng;
 
     #[test]
@@ -20,6 +21,7 @@ mod test {
         assert_eq!(">>>>    aaa\n>>>>   bbb\n>>>>  ccc\n>>>>\n>>>>ddd", gs0.replace_indent(">>>>"));
     }
 
+    #[test]
     fn test_parse_string() {
         let str0 = r#"
           *.*.*.*.*A*.*.
@@ -31,9 +33,8 @@ mod test {
           stats=Stats(19,33,2,1,0,[1,2,9,1])
           origins=[(0,6),(4,6),(4,0),(0,0)]
         "#.trim_indent();
-        let gs = GameState::parse_string(st0);
-
-
+        let gs = GameState::parse_string(&str0[..]);
+        println!("{:?}", gs)
     }
 
 //    testParseString() {
