@@ -88,11 +88,25 @@ impl GameState {
 //        for c in lines[0].chars() {
 //            let () = c;
 //        };
-        let mut layer0_raw: Vec<char> = vec!['\0'; m * n];
-        // let layer0 = new char[m][n];
-        // let layer1 = new char[m][n];
-        eprintln!("lines = {:#?}", lines);
-        eprintln!("rest = {:#?}", rest);
+        let mut layer0 = vec![vec![' '; n]; m];
+        let mut layer1 = vec![vec!['.'; n]; m];
+        for i in 0..m {
+            let mut cs = lines[i].chars();
+            for j in 0..(2 * n) {
+                let c0 = cs.nth(j);
+                print!("{}:{:?} ", j, c0);
+                let c = c0.unwrap_or('#');
+                if j % 2 == 0 {
+                    layer0[i][j / 2] = c;
+                } else {
+                    layer1[i][j / 2] = c;
+                }
+            }
+        }
+
+        eprintln!("lines = {:?}", lines);
+        eprintln!("layer0 = {:?}", layer0);
+        eprintln!("layer1 = {:?}", layer1);
         eprintln!("m, n = {:#?}, {:#?}", m, n);
 
         return Err(ParseError)
