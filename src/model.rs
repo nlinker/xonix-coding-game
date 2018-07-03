@@ -2,11 +2,13 @@
 #![allow(unused)]
 
 extern crate itertools;
+extern crate core;
 
 use std::str::FromStr;
 use std::fmt;
 use std::fmt::Formatter;
 use std::error::Error;
+use core::str;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -69,6 +71,9 @@ impl Error for ParseError {
 
 impl GameState {
     pub fn parse_string(str: &str) -> Result<GameState, ParseError> {
+
+        use std::ascii::{AsciiExt};
+
         // detect sizes
         let raw_lines: Vec<&str> = str.split("\n")
             .map(|s| s.trim())
@@ -85,17 +90,12 @@ impl GameState {
         }
         let m = lines.len();
         let n = lines.iter().map(|it| it.len() / 2).max().unwrap_or(0);
-//        for c in lines[0].chars() {
-//            let () = c;
-//        };
         let mut layer0 = vec![vec![' '; n]; m];
         let mut layer1 = vec![vec!['.'; n]; m];
         for i in 0..m {
-            let mut cs = lines[i].chars();
+            let cs = lines[i].as_bytes();
             for j in 0..(2 * n) {
-                let c0 = cs.nth(j);
-                print!("{}:{:?} ", j, c0);
-                let c = c0.unwrap_or('#');
+                let c = cs[j] as char;
                 if j % 2 == 0 {
                     layer0[i][j / 2] = c;
                 } else {

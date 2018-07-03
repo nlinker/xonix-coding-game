@@ -34,7 +34,7 @@ mod test {
           origins=[(0,6),(4,6),(4,0),(0,0)]
         "#.trim_indent();
         let gs = GameState::parse_string(&str0[..]);
-        println!("{:?}", gs)
+        println!("\n-----------\n{:?}", gs)
     }
 
 //    testParseString() {
