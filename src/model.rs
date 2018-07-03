@@ -71,9 +71,6 @@ impl Error for ParseError {
 
 impl GameState {
     pub fn parse_string(str: &str) -> Result<GameState, ParseError> {
-
-        use std::ascii::{AsciiExt};
-
         // detect sizes
         let raw_lines: Vec<&str> = str.split("\n")
             .map(|s| s.trim())
