@@ -9,6 +9,8 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::error::Error;
 use core::str;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -19,9 +21,9 @@ enum Cell {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-struct Point(u16, u16);
+pub struct Point(i16, i16);
 
-enum Move {
+pub enum Move {
     Right, Up, Left, Down, Stop,
 }
 
@@ -29,14 +31,14 @@ enum Move {
 /// - `m` the number of rows
 /// - `n` the number of cols
 /// - `m×n` matrix of cells
-struct Field {
+pub struct Field {
     m: usize,
     n: usize,
     cells: Vec<Vec<Cell>>,
 }
 
 /// Stats is updated on each step according to the things happened
-struct Stats {
+pub struct Stats {
     iteration: u16,
     filled_count: u16,
     head_to_head_count: u16,
@@ -55,9 +57,10 @@ pub struct GameState {
     reordering: Vec<u8>,
 }
 
-struct Player(Vec<Point>);
+#[derive(Clone, Debug)]
+pub struct Player(pub Vec<Point>);
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ParseError;
 
 impl fmt::Display for ParseError {
@@ -71,6 +74,10 @@ impl Error for ParseError {
 
 impl GameState {
     pub fn parse_string(str: &str) -> Result<GameState, ParseError> {
+        fn bound(x: i16, l: i16, r: i16) -> i16 {
+            if x < l { l } else if r < x { r } else { x }
+        }
+        let neigh = vec![Point(0, -1), Point(-1, 0), Point(0, 1), Point(1, 0)];
         // detect sizes
         let raw_lines: Vec<&str> = str.split("\n")
             .map(|s| s.trim())
@@ -87,12 +94,12 @@ impl GameState {
         }
         let m = lines.len();
         let n = lines.iter().map(|it| it.len() / 2).max().unwrap_or(0);
-        let mut layer0 = vec![vec![' '; n]; m];
-        let mut layer1 = vec![vec!['.'; n]; m];
+        let mut layer0 = vec![vec![' ' as u8; n]; m];
+        let mut layer1 = vec![vec!['.' as u8; n]; m];
         for i in 0..m {
             let cs = lines[i].as_bytes();
             for j in 0..(2 * n) {
-                let c = cs[j] as char;
+                let c = cs[j];
                 if j % 2 == 0 {
                     layer0[i][j / 2] = c;
                 } else {
@@ -100,15 +107,129 @@ impl GameState {
                 }
             }
         }
+        let mut players_map: HashMap<u8, Vec<Point>> = HashMap::new();
+        for i in 0..m {
+            for j in 0..n {
+                let c = layer1[i][j];
+                if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
+                    players_map.insert(c - ('A' as u8), vec![Point(i as i16, j as i16)]);
+                }
+            }
+        }
+        if let Some(&max_id) = players_map.keys().max() {
+            for k in 0..=max_id {
+                players_map.entry(k).or_insert_with(|| vec![]);
+            }
+        }
+        let mut cells: Vec<Vec<Cell>> = vec![vec![Cell::Empty; n]; m];
+        for i in 0..m {
+            for j in 0..n {
+                let c = layer0[i][j];
+                let cell = if c == ('*' as u8) {
+                    Cell::Border
+                } else if ('0' as u8) < c && c < ('9' as u8) {
+                    Cell::Owned(c - ('0' as u8))
+                } else {
+                    Cell::Empty
+                };
+                cells[i][j] = cell;
+            }
+        }
+        // now build player bodies = tails + heads
+        // head is the last element of the corresponding list
+        for (k, mut body) in &mut players_map {
+            if !body.is_empty() {
+                // current point, start with the head
+                let mut cp = Some(body[0]);
+                let ct = ('a' as u8) + k; // the player's tail char
+                while cp.is_some() {
+                    // seek for lower letter around until not found
+                    let t = cp.unwrap();
+                    let point0 = neigh.iter().map(|Point(ni, nj)| {
+                        let Point(mut i, mut j) = t;
+                        i = bound(i + ni, 0, (m - 1) as i16);
+                        j = bound(j + nj, 0, (n - 1) as i16);
+                        Point(i, j)
+                    }).filter(|p| {
+                        let Point(pi, pj) = p;
+                        !body.contains(p) && layer1[*pi as usize][*pj as usize] == ct
+                    }).next();
+                    if point0.is_some() {
+                        body.insert(0, point0.unwrap());
+                    }
+                    cp = point0;
+                }
+            } else {
+                //body is empty => do nothing, the player has been killed maybe
+            }
+        }
+        let np = players_map.len();
+        let mut filled_count = 0;
+        let mut scores = vec![0u16; np];
+        // calculate scores
+        for i in 0..m {
+            for j in 0..n {
+                match cells[i][j] {
+                    Cell::Empty => {}
+                    Cell::Border => {
+                        filled_count += 1;
+                    }
+                    Cell::Owned(k) => {
+                        filled_count += 1;
+                        let old = scores[k as usize];
+                        scores[k as usize] = old + 1;
+                    }
+                }
+            }
+        }
+        // initialize origins by the number of players
+        let mut players = vec![Player(vec![]); np];
+        for k in 0..np {
+            players.push(Player(players_map[&(k as u8)]));
+        }
+        let field = Field { m, n, cells };
+        // reordering and stats
+        let triple = GameState::parse_string_rest(np, &rest);
+        let reordering = triple.reordering;
 
-        eprintln!("lines = {:?}", lines);
-        eprintln!("layer0 = {:?}", layer0);
-        eprintln!("layer1 = {:?}", layer1);
+/*
+        val field = new Field(m, n, cells);
+        val reordering = triple.getReordering().orElseGet(() ->
+            Gameplay.IT.createDefaultPermutation(np));
+        val origins = triple.getOrigins().orElseGet(() ->
+            ImmutableList.copyOf(Gameplay.IT.createOrigins(m, n, np)));
+        val stats = triple.getStats().orElseGet(() ->
+            new Stats(0, 0, 0, 0, 0, scores));
+        stats.setFilledCount(filledCount);
+
+        return ModelGameState.of(field, origins, players, stats, reordering);
+*/
+        eprintln!("players_map = {:?}", players_map);
         eprintln!("m, n = {:#?}, {:#?}", m, n);
 
         return Err(ParseError)
     }
+
+    fn parse_string_rest(np: usize, rest: &Vec<&str>) -> ParseRestResult {
+        // TODO finish it
+        ParseRestResult {
+            reordering: None,
+            origins: None,
+            stats: None
+        }
+    }
+
+    fn create_default_permutation(np: usize) -> Vec<u8> {
+        (0..np).map(|x| x as u8).collect()
+    }
 }
+
+struct ParseRestResult {
+    reordering: Option<Vec<u8>>,
+    origins: Option<Vec<Point>>,
+    stats: Option<Stats>,
+}
+
 
 impl fmt::Debug for GameState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
