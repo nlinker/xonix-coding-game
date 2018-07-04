@@ -194,7 +194,7 @@ impl GameState {
         // reordering and stats
         let triple = GameState::parse_string_rest(np, &rest);
         let reordering = triple.reordering.unwrap_or_else(|| create_default_permutation(np));
-        let origins = triple.origins.unwrap_or_else(|| create_origins_np(m, n, np));
+        let origins = triple.origins.unwrap_or_else(|| create_origins_n(m, n, np));
         let stats = triple.stats.unwrap_or_else(|| Stats {
             iteration: 0,
             filled_count,
@@ -229,16 +229,15 @@ pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> 
     return tmp;
 }
 
-pub fn create_origins_np(height: usize, width: usize, np: usize) -> Vec<Point> {
+pub fn create_origins_n(height: usize, width: usize, np: usize) -> Vec<Point> {
     let perm = create_default_permutation(np);
-    create_origins_perm(height, width, perm)
+    create_origins(height, width, perm)
 }
 
-pub fn create_origins_perm(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> {
+pub fn create_origins(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> {
     let m = height as i16;
     let n = width as i16;
     let b2p: Box<Fn(usize) -> Point> = Box::new(move |l| border_to_point(height, width, l));
-//    let index_of: impl Fn(&Vec<u8>, u8) -> usize = move |xs, x| xs.iter().position(|&x| { x == 0 }).unwrap();
     fn index_of(xs: &Vec<u8>, x: u8) -> usize {
         xs.iter().position(|&z| { z == x }).unwrap()
     }
