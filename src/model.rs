@@ -1,8 +1,8 @@
-
 #![allow(unused)]
 
-extern crate itertools;
 extern crate core;
+extern crate itertools;
+extern crate regex;
 
 use std::str::FromStr;
 use std::fmt;
@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use rand::prelude::{Rng, RngCore};
 use rand::isaac::IsaacRng;
+use regex::Regex;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -41,6 +42,7 @@ pub struct Field {
 }
 
 /// Stats is updated on each step according to the things happened
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Stats {
     pub iteration: u16,
     pub filled_count: u16,
@@ -192,7 +194,7 @@ impl GameState {
         }
         let field = Field { m, n, cells };
         // reordering and stats
-        let triple = GameState::parse_string_rest(np, &rest);
+        let triple = GameState::parse_string_rest(np, &rest).unwrap();
         let reordering = triple.reordering.unwrap_or_else(|| create_default_permutation(np));
         let origins = triple.origins.unwrap_or_else(|| create_origins_n(m, n, np));
         let stats = triple.stats.unwrap_or_else(|| Stats {
@@ -209,13 +211,108 @@ impl GameState {
         return Err(ParseError)
     }
 
-    fn parse_string_rest(np: usize, rest: &Vec<&str>) -> ParseRestResult {
-        // TODO finish it
-        ParseRestResult {
-            reordering: None,
-            origins: None,
-            stats: None
+    pub fn parse_string_rest(np: usize, rest: &Vec<&str>) -> Result<ParseRestResult, ParseError> {
+        let mut reordering: Option<Vec<u8>> = None;
+        let mut origins: Option<Vec<Point>> = None;
+        let mut stats: Option<Stats> = None;
+        for s in rest {
+            let mut lr = s.split("=");
+            let l = lr.next().unwrap().trim();
+            let r = lr.next().unwrap().trim();
+            if l == "reordering" {
+                let caps10 = Regex::new("\\[(.*?)]").unwrap().captures(r);
+                if caps10.is_some() {
+                    let caps1 = caps10.unwrap();
+                    let list: Vec<u8> = caps1.get(1).unwrap().as_str()
+                        .split(",")
+                        .map(|s: &str| s.trim().parse::<u8>().unwrap())
+                        .collect();
+                    // check
+                    let all_present = (0..np as u8).all(|x| list.contains(&x));
+                    if list.len() != np || !all_present {
+                        return Err(ParseError);
+                    }
+                    reordering = Some(list);
+                }
+            } else if l == "origins" {
+
+            }
+
         }
+        Ok(ParseRestResult { reordering, origins, stats })
+    }
+/*
+    private static ParseRestResult parseRest(int np, List<String> rest) {
+        Optional<List<Integer>> reordering = Optional.empty();
+        Optional<List<Point>> origins = Optional.empty();
+        Optional<Stats> stats = Optional.empty();
+        for (String str : rest) {
+            String[] lr = str.split("=");
+            String l = lr[0].trim();
+            String r = lr[1].trim();
+            switch (l) {
+                case "reordering": {
+                    Matcher m1 = Pattern.compile("\\[(.*?)]").matcher(r);
+                    if (m1.matches()) {
+                        List<Integer> list = Arrays.stream(m1.group(1).split(","))
+                            .map(s -> Integer.parseInt(s.trim()))
+                            .collect(toCollection(ArrayList::new));
+                        // check
+                        boolean allPresent = IntStream.range(0, np).allMatch(list::contains);
+                        if (list.size() != np || !allPresent) {
+                            throw new RuntimeException("Cannot parse, np=" + np + " rest=" + rest);
+                        }
+                        reordering = Optional.of(list);
+                    }
+                    break;
+                }
+                case "stats": {
+                    Matcher m1 = Pattern.compile("Stats\\((.*?)\\)").matcher(r);
+                    if (m1.matches()) {
+                        Matcher m2 = Pattern.compile("(\\d+),(\\d+),(\\d+),(\\d+),(\\d+),\\[(.*?)]")
+                            .matcher(m1.group(1));
+                        if (m2.matches()) {
+                            int a1 = Integer.parseInt(m2.group(1));
+                            int a2 = Integer.parseInt(m2.group(2));
+                            int a3 = Integer.parseInt(m2.group(3));
+                            int a4 = Integer.parseInt(m2.group(4));
+                            int a5 = Integer.parseInt(m2.group(5));
+                            List<Integer> scores = Arrays.stream(m2.group(6).split(","))
+                                .map(s -> Integer.parseInt(s.trim()))
+                                .collect(toCollection(ArrayList::new));
+                            stats = Optional.of(new Stats(a1, a2, a3, a4, a5, scores));
+                        }
+                    }
+                    break;
+                }
+                case "origins": {
+                    Matcher m1 = Pattern.compile("\\[(.*?)]").matcher(r);
+                    if (m1.matches()) {
+                        Matcher m2 = Pattern.compile("\\((\\d+),(\\d+)\\),?").matcher(m1.group(1));
+                        List<Point> list = new ArrayList<>();
+                        while (m2.find()) {
+                            list.add(Point.of(
+                                Integer.parseInt(m2.group(1)),
+                                Integer.parseInt(m2.group(2))
+                            ));
+                        }
+                        if (list.size() != np) {
+                            throw new RuntimeException("Cannot parse, np=" + np + " rest=" + rest);
+                        }
+                        origins = Optional.of(list);
+                    }
+                    break;
+                }
+                default:
+                    throw new RuntimeException("Unexpected key: " + l);
+            }
+        }
+        return new ParseRestResult(reordering, origins, stats);
+    }
+*/
+
+    fn to_string(&self) -> String {
+        unimplemented!()
     }
 }
 
@@ -312,7 +409,8 @@ pub fn border_to_point(height: usize, width: usize, pos: usize) -> Point {
     }
 }
 
-struct ParseRestResult {
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct ParseRestResult {
     reordering: Option<Vec<u8>>,
     origins: Option<Vec<Point>>,
     stats: Option<Stats>,
