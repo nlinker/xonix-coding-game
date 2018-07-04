@@ -6,7 +6,7 @@ struct TestBot<'a> {
     path: &'a str,
     iter: u16,
     index: Option<u8>,
-    random: Option<Box<RngCore + SeedableRng>>,
+    random: Option<Box<RngCore + SeedableRngll>>,
 }
 
 

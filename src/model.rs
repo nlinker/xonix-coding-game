@@ -16,7 +16,7 @@ use rand::isaac::IsaacRng;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-enum Cell {
+pub enum Cell {
     Empty,
     Border,
     Owned(u8),
@@ -33,29 +33,30 @@ pub enum Move {
 /// - `m` the number of rows
 /// - `n` the number of cols
 /// - `m×n` matrix of cells
+#[derive(Eq, PartialEq, Debug)]
 pub struct Field {
-    m: usize,
-    n: usize,
-    cells: Vec<Vec<Cell>>,
+    pub m: usize,
+    pub n: usize,
+    pub cells: Vec<Vec<Cell>>,
 }
 
 /// Stats is updated on each step according to the things happened
 pub struct Stats {
-    iteration: u16,
-    filled_count: u16,
-    head_to_head_count: u16,
-    ouroboros_count: u16,
-    bite_count: u16,
-    scores: Vec<u16>,
+    pub iteration: u16,
+    pub filled_count: u16,
+    pub head_to_head_count: u16,
+    pub ouroboros_count: u16,
+    pub bite_count: u16,
+    pub scores: Vec<u16>,
 }
 
 /// _player_names_ is player names
 pub struct GameState {
-    field: Field,
-    player_names: Vec<String>,
-    players: Vec<Player>,
-    origins: Vec<Point>,
-    reordering: Vec<u8>,
+    pub field: Field,
+    pub player_names: Vec<String>,
+    pub players: Vec<Player>,
+    pub origins: Vec<Point>,
+    pub reordering: Vec<u8>,
 }
 
 #[derive(Clone, Debug)]
@@ -228,63 +229,78 @@ pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> 
     return tmp;
 }
 
-fn create_origins_np(m: usize, n: usize, np: usize) -> Vec<Point> {
+pub fn create_origins_np(height: usize, width: usize, np: usize) -> Vec<Point> {
     let perm = create_default_permutation(np);
-    create_origins_perm(m, n, perm)
+    create_origins_perm(height, width, perm)
 }
 
-fn create_origins_perm(m: usize, n: usize, perm: Vec<u8>) -> Vec<Point> {
-    let b2p: Box<Fn(usize) -> Point> = Box::new(move |l| border_to_point(m, n, l));
-    /*
-            Function<Integer, Point> b2p = l -> border2Point(rows, cols, l);
-            val botsCount = permutation.size();
-            val corners = Arrays.asList(b2p.apply(0),
-                b2p.apply(rows + cols - 2),
-                b2p.apply(cols - 1),
-                b2p.apply(rows + 2 * cols - 3));
-            switch (botsCount) {
-                case 0: {
-                    return ImmutableList.of();
-                }
-                case 1: {
-                    val p0 = permutation.indexOf(0);
-                    return ImmutableList.of(corners.get(p0));
-                }
-                case 2: {
-                    val p0 = permutation.indexOf(0);
-                    val p1 = permutation.indexOf(1);
-                    return ImmutableList.of(corners.get(p0), corners.get(p1));
-                }
-                case 3: {
-                    val p0 = permutation.indexOf(0);
-                    val p1 = permutation.indexOf(1);
-                    val p2 = permutation.indexOf(2);
-                    return ImmutableList.of(corners.get(p0), corners.get(p1), corners.get(p2));
-                }
-                case 4: {
-                    val p0 = permutation.indexOf(0);
-                    val p1 = permutation.indexOf(1);
-                    val p2 = permutation.indexOf(2);
-                    val p3 = permutation.indexOf(3);
-                    return ImmutableList.of(corners.get(p0), corners.get(p1), corners.get(p2), corners.get(p3));
-                }
-                default:
-                    // uniformly distribute across the perimeter
-                    val step = 2 * (rows + cols - 2) / botsCount;
-                    Point[] origins = new Point[botsCount];
-                    for (int i = 0; i < botsCount; i++) {
-                        origins[permutation.indexOf(i)] = b2p.apply(i * step);
-                    }
-                    return ImmutableList.copyOf(origins);
+pub fn create_origins_perm(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> {
+    let m = height as i16;
+    let n = width as i16;
+    let b2p: Box<Fn(usize) -> Point> = Box::new(move |l| border_to_point(height, width, l));
+//    let index_of: impl Fn(&Vec<u8>, u8) -> usize = move |xs, x| xs.iter().position(|&x| { x == 0 }).unwrap();
+    fn index_of(xs: &Vec<u8>, x: u8) -> usize {
+        xs.iter().position(|&z| { z == x }).unwrap()
+    }
+    let np = perm.len();
+    let corners = vec![Point(0, 0), Point(m - 1, n - 1), Point(0, n - 1), Point(m - 1, 0)];
+    match np {
+        0 => {
+            eprintln!("corners = {:?}", corners);
+            vec![]
+        }
+        1 => {
+            let p0 = index_of(&perm, 0);
+            vec![corners[p0]]
+        }
+        2 => {
+            let p0 = index_of(&perm, 0);
+            let p1 = index_of(&perm, 1);
+            eprintln!("perm, p0, p1 = {:?} {:#?} {:#?}", perm, p0, p1);
+            vec![corners[p0], corners[p1]]
+        }
+        3 => {
+            let p0 = index_of(&perm, 0);
+            let p1 = index_of(&perm, 1);
+            let p2 = index_of(&perm, 2);
+            vec![corners[p0], corners[p1], corners[p2]]
+        }
+        4 => {
+            let p0 = index_of(&perm, 0);
+            let p1 = index_of(&perm, 1);
+            let p2 = index_of(&perm, 2);
+            let p3 = index_of(&perm, 3);
+            vec![corners[p0], corners[p1], corners[p2], corners[p3]]
+        }
+        _ => {
+            // uniformly distribute across the perimeter
+            let step: usize = 2 * (height + width - 2) / np;
+            let mut opts: Vec<Option<Point>> = vec![None; np];
+            for k in 0..np {
+                opts[index_of(&perm, k as u8)] = Some(b2p(k * step));
             }
-    */
-    unreachable!()
+            opts.iter().map(|opt| opt.unwrap()).collect()
+        }
+    }
 }
 
+pub fn create_default_field(m: usize, n: usize) -> Field {
+    let mut cells: Vec<Vec<Cell>> = vec![vec![Cell::Empty; n]; m];
+    for i in 0..m {
+        for j in 0..n {
+            cells[i][j] = if i == 0 || i == m - 1 || j == 0 || j == n - 1 {
+                Cell::Border
+            } else {
+                Cell::Empty
+            }
+        }
+    }
+    Field { m, n, cells }
+}
 
-pub fn border_to_point(rows: usize, cols: usize, pos: usize) -> Point {
-    let m = rows as i16;
-    let n = cols as i16;
+pub fn border_to_point(height: usize, width: usize, pos: usize) -> Point {
+    let m = height as i16;
+    let n = width as i16;
     let pos = (pos as i16) % (2 * (m + n) - 4);
     if pos < n {
         Point(0, pos)

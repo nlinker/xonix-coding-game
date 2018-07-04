@@ -54,6 +54,32 @@ mod test {
     }
 
     #[test]
+    fn test_create_origins() {
+        let field = create_default_field(7, 9);
+        // 2 players - opposite corners
+        let o2 = create_origins_np(field.m, field.n, 2);
+        assert_eq!(vec![Point(0, 0), Point(6, 8)], o2);
+        // 4 players - all corners
+        let o4 = create_origins_np(field.m, field.n, 4);
+        assert_eq!(vec![Point(0, 0), Point(6, 8), Point(0, 8), Point(6, 0)], o4);
+    }
+
+/*
+    @Test
+    public void testCreateOrigins() {
+        Field field = game.createDefaultField(7, 9);
+        // otherwise - spread in the perimeter
+        val o8 = game.createOrigins(field.getHeight(), field.getWidth(), 8);
+        assertEquals(Arrays.asList(
+            Point.of(0, 0), Point.of(0, 3), Point.of(0, 6), Point.of(1, 8),
+            Point.of(4, 8), Point.of(6, 7), Point.of(6, 4), Point.of(6, 1)
+        ), o8);
+    }
+
+*/
+
+
+    #[test]
     fn test_parse_string() {
         let str0 = r#"
           *.*.*.*.*A*a*a
