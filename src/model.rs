@@ -53,7 +53,6 @@ pub struct GameState {
     player_names: Vec<String>,
     players: Vec<Player>,
     origins: Vec<Point>,
-    // monsters: Vec<Point>,
     reordering: Vec<u8>,
 }
 
@@ -176,8 +175,7 @@ impl GameState {
                     }
                     Cell::Owned(k) => {
                         filled_count += 1;
-                        let old = scores[k as usize];
-                        scores[k as usize] = old + 1;
+                        scores[k as usize] = scores[k as usize] + 1;
                     }
                 }
             }
@@ -185,28 +183,26 @@ impl GameState {
         // initialize origins by the number of players
         let mut players = vec![Player(vec![]); np];
         for k in 0..np {
-            players.push(Player(players_map[&(k as u8)]));
+            // to avoid
+            let pts = players_map.remove(&(k as u8)).unwrap();
+            players.push(Player(pts));
         }
         let field = Field { m, n, cells };
         // reordering and stats
         let triple = GameState::parse_string_rest(np, &rest);
-        let reordering = triple.reordering;
-
-/*
-        val field = new Field(m, n, cells);
-        val reordering = triple.getReordering().orElseGet(() ->
-            Gameplay.IT.createDefaultPermutation(np));
-        val origins = triple.getOrigins().orElseGet(() ->
-            ImmutableList.copyOf(Gameplay.IT.createOrigins(m, n, np)));
-        val stats = triple.getStats().orElseGet(() ->
-            new Stats(0, 0, 0, 0, 0, scores));
-        stats.setFilledCount(filledCount);
-
-        return ModelGameState.of(field, origins, players, stats, reordering);
-*/
-        eprintln!("players_map = {:?}", players_map);
-        eprintln!("m, n = {:#?}, {:#?}", m, n);
-
+        let reordering = triple.reordering.unwrap_or_else(|| GameState::create_default_permutation(np));
+        let origins = triple.origins.unwrap_or_else(|| GameState::create_origins(m, n, np));
+        let stats = triple.stats.unwrap_or_else(|| Stats {
+            iteration: 0,
+            filled_count,
+            head_to_head_count: 0,
+            ouroboros_count: 0,
+            bite_count: 0,
+            scores,
+        });
+        let player_names = (0..np).map(|i| format!("player-{}", i)).collect();
+        let gs = GameState { field, player_names, players, origins, reordering };
+        eprintln!("gs = {:?}", gs);
         return Err(ParseError)
     }
 
@@ -221,6 +217,10 @@ impl GameState {
 
     fn create_default_permutation(np: usize) -> Vec<u8> {
         (0..np).map(|x| x as u8).collect()
+    }
+
+    fn create_origins(m: usize, n: usize, np: usize) -> Vec<Point> {
+        unreachable!()
     }
 }
 
