@@ -11,6 +11,8 @@ use std::error::Error;
 use core::str;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use rand::prelude::{Rng, RngCore};
+use rand::isaac::IsaacRng;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -190,8 +192,8 @@ impl GameState {
         let field = Field { m, n, cells };
         // reordering and stats
         let triple = GameState::parse_string_rest(np, &rest);
-        let reordering = triple.reordering.unwrap_or_else(|| GameState::create_default_permutation(np));
-        let origins = triple.origins.unwrap_or_else(|| GameState::create_origins(m, n, np));
+        let reordering = triple.reordering.unwrap_or_else(|| create_default_permutation(np));
+        let origins = triple.origins.unwrap_or_else(|| create_origins_np(m, n, np));
         let stats = triple.stats.unwrap_or_else(|| Stats {
             iteration: 0,
             filled_count,
@@ -214,13 +216,84 @@ impl GameState {
             stats: None
         }
     }
+}
 
-    fn create_default_permutation(np: usize) -> Vec<u8> {
-        (0..np).map(|x| x as u8).collect()
-    }
+pub fn create_default_permutation(np: usize) -> Vec<u8> {
+    (0..np).map(|x| x as u8).collect()
+}
 
-    fn create_origins(m: usize, n: usize, np: usize) -> Vec<Point> {
-        unreachable!()
+pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> {
+    let mut tmp = xs.clone();
+    random.shuffle(tmp.as_mut_slice());
+    return tmp;
+}
+
+fn create_origins_np(m: usize, n: usize, np: usize) -> Vec<Point> {
+    let perm = create_default_permutation(np);
+    create_origins_perm(m, n, perm)
+}
+
+fn create_origins_perm(m: usize, n: usize, perm: Vec<u8>) -> Vec<Point> {
+    let b2p: Box<Fn(usize) -> Point> = Box::new(move |l| border_to_point(m, n, l));
+    /*
+            Function<Integer, Point> b2p = l -> border2Point(rows, cols, l);
+            val botsCount = permutation.size();
+            val corners = Arrays.asList(b2p.apply(0),
+                b2p.apply(rows + cols - 2),
+                b2p.apply(cols - 1),
+                b2p.apply(rows + 2 * cols - 3));
+            switch (botsCount) {
+                case 0: {
+                    return ImmutableList.of();
+                }
+                case 1: {
+                    val p0 = permutation.indexOf(0);
+                    return ImmutableList.of(corners.get(p0));
+                }
+                case 2: {
+                    val p0 = permutation.indexOf(0);
+                    val p1 = permutation.indexOf(1);
+                    return ImmutableList.of(corners.get(p0), corners.get(p1));
+                }
+                case 3: {
+                    val p0 = permutation.indexOf(0);
+                    val p1 = permutation.indexOf(1);
+                    val p2 = permutation.indexOf(2);
+                    return ImmutableList.of(corners.get(p0), corners.get(p1), corners.get(p2));
+                }
+                case 4: {
+                    val p0 = permutation.indexOf(0);
+                    val p1 = permutation.indexOf(1);
+                    val p2 = permutation.indexOf(2);
+                    val p3 = permutation.indexOf(3);
+                    return ImmutableList.of(corners.get(p0), corners.get(p1), corners.get(p2), corners.get(p3));
+                }
+                default:
+                    // uniformly distribute across the perimeter
+                    val step = 2 * (rows + cols - 2) / botsCount;
+                    Point[] origins = new Point[botsCount];
+                    for (int i = 0; i < botsCount; i++) {
+                        origins[permutation.indexOf(i)] = b2p.apply(i * step);
+                    }
+                    return ImmutableList.copyOf(origins);
+            }
+    */
+    unreachable!()
+}
+
+
+fn border_to_point(rows: usize, cols: usize, pos: usize) -> Point {
+    let m = rows as i16;
+    let n = cols as i16;
+    let pos = (pos as i16) % (2 * (m + n) - 4);
+    if pos < n {
+        Point(0, pos)
+    } else if pos < n + m - 2 {
+        Point(pos - n + 1, n - 1)
+    } else if pos < n + n + m - 2 {
+        return Point(m - 1, n + n + m - 3 - pos)
+    } else {
+        return Point(n + n + m + m - 4 - pos, 0)
     }
 }
 

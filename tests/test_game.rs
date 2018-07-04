@@ -1,12 +1,15 @@
 extern crate xcg;
 extern crate rand;
 
+extern crate core;
+
 #[cfg(test)]
 mod test {
 
     use xcg::utils::Trim;
     use xcg::model::*;
     use rand::IsaacRng;
+    use core::fmt::Debug;
 
     #[test]
     fn test_indent_ops() {
@@ -37,28 +40,24 @@ mod test {
         println!("\n-----------\n{:?}", gs)
     }
 
-//    testParseString() {
-//val seed = 42L;
-//val random = new Random(96);
-//List<Bot> bots = IntStream.range(0, 4)
-//.mapToObj(i -> new TestBot(i, "", random))
-//.collect(toList());
-//Supplier<List<Bot>> botFactory = () -> bots;
-//val match = game.createMatch(5, 7, botFactory, 20, 90.0, Optional.of(seed));
-//MatchLogger logger = (gs, ns) -> {};
-//game.runMatch(match, logger);
-//String str = match.getGameState().toString();
-//assertEquals("" +
-//"*.*.*.*.*A*.*.\n" +
-//"*.3.2.2.2.0.*.\n" +
-//"*.2D2.2C2.1.*.\n" +
-//"*.2.2. . .1B*.\n" +
-//"*.*.*.*.*.*.*.\n" +
-//"reordering=[2,1,3,0]\n" +
-//"stats=Stats(19,33,2,1,0,[1,2,9,1])\n" +
-//"origins=[(0,6),(4,6),(4,0),(0,0)]\n", str);
-//val gs2 = gameState(str);
-//assertEquals(match.getGameState(), gs2);
-//}
+    #[test]
+    fn test_permutations() {
+        let perm0 = create_default_permutation(4);
+        assert_eq!("[0, 1, 2, 3]", perm0.nice());
+        let mut random = IsaacRng::new_from_u64(123);
+        assert_eq!("[2, 0, 1, 3]", copy_shuffled_permutation(&perm0, &mut random).nice());
+        assert_eq!("[3, 2, 1, 0]", copy_shuffled_permutation(&perm0, &mut random).nice());
+        assert_eq!("[2, 1, 3, 0]", copy_shuffled_permutation(&perm0, &mut random).nice());
+    }
 
+    // http://play.rust-lang.org/?gist=ed56c0ea31c17399545386416af5b56c
+    trait Nice {
+        fn nice(&self) -> String;
+    }
+
+    impl<T: Debug> Nice for T {
+        fn nice(&self) -> String {
+            format!("{:?}", *self)
+        }
+    }
 }
