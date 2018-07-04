@@ -220,9 +220,9 @@ impl GameState {
             let l = lr.next().unwrap().trim();
             let r = lr.next().unwrap().trim();
             if l == "reordering" {
-                let caps10 = Regex::new("\\[(.*?)]").unwrap().captures(r);
-                if caps10.is_some() {
-                    let caps1 = caps10.unwrap();
+                let caps1_ = Regex::new("\\[(.*?)]").unwrap().captures(r);
+                if caps1_.is_some() {
+                    let caps1 = caps1_.unwrap();
                     let list: Vec<u8> = caps1.get(1).unwrap().as_str()
                         .split(",")
                         .map(|s: &str| s.trim().parse::<u8>().unwrap())
@@ -234,7 +234,32 @@ impl GameState {
                     }
                     reordering = Some(list);
                 }
-            } else if l == "origins" {
+            } else if l == "stats" {
+                let caps1_ = Regex::new("Stats\\((.*?)\\)").unwrap().captures(r);
+                if caps1_.is_some() {
+                    let c1 = caps1_.unwrap().get(1).unwrap().as_str();
+                    let caps2_ = Regex::new("(\\d+),(\\d+),(\\d+),(\\d+),(\\d+),\\[(.*?)]").unwrap().captures(c1);
+                    if caps2_.is_some() {
+                        let c2 = caps2_.unwrap();
+                        let a1 = c2.get(1).unwrap().as_str().parse::<u16>().unwrap();
+                        let a2 = c2.get(2).unwrap().as_str().parse::<u16>().unwrap();
+                        let a3 = c2.get(3).unwrap().as_str().parse::<u16>().unwrap();
+                        let a4 = c2.get(4).unwrap().as_str().parse::<u16>().unwrap();
+                        let a5 = c2.get(5).unwrap().as_str().parse::<u16>().unwrap();
+                        let scores: Vec<u16> = c2.get(6).unwrap().as_str()
+                            .split(",")
+                            .map(|s: &str| s.trim().parse::<u16>().unwrap())
+                            .collect();
+                        stats = Some(Stats {
+                            iteration: a1,
+                            filled_count: a2,
+                            head_to_head_count: a3,
+                            ouroboros_count: a4,
+                            bite_count: a5,
+                            scores,
+                        });
+                    }
+                }
 
             }
 
@@ -251,21 +276,6 @@ impl GameState {
             String l = lr[0].trim();
             String r = lr[1].trim();
             switch (l) {
-                case "reordering": {
-                    Matcher m1 = Pattern.compile("\\[(.*?)]").matcher(r);
-                    if (m1.matches()) {
-                        List<Integer> list = Arrays.stream(m1.group(1).split(","))
-                            .map(s -> Integer.parseInt(s.trim()))
-                            .collect(toCollection(ArrayList::new));
-                        // check
-                        boolean allPresent = IntStream.range(0, np).allMatch(list::contains);
-                        if (list.size() != np || !allPresent) {
-                            throw new RuntimeException("Cannot parse, np=" + np + " rest=" + rest);
-                        }
-                        reordering = Optional.of(list);
-                    }
-                    break;
-                }
                 case "stats": {
                     Matcher m1 = Pattern.compile("Stats\\((.*?)\\)").matcher(r);
                     if (m1.matches()) {
