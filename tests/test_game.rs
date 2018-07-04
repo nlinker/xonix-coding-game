@@ -25,6 +25,35 @@ mod test {
     }
 
     #[test]
+    fn test_border() {
+        // test on the different cells sizes
+        let field_sizes = vec![(2, 2), (9, 3), (3, 4), (4, 7)];
+        //         n
+        //   * * * * * * *
+        // m *           *
+        //   *           *
+        //   * * * * * * *
+        for (m, n) in field_sizes {
+            let mut perimeter: Vec<Point> = vec![];
+            perimeter.append(&mut points_2(0, Box::new(0..n)));
+            perimeter.append(&mut points_1(Box::new(1..m - 1), n - 1));
+            perimeter.append(&mut points_2(m - 1, Box::new((0..n).rev())));
+            perimeter.append(&mut points_1(Box::new((1..m - 1).rev()), 0));
+            let size = 2 * (m + n - 2) as usize;
+            assert_eq!(size, perimeter.len());
+            for l in 0..=(2*size) {
+                assert_eq!(perimeter[l % size], border_to_point(m as usize, n as usize, l as usize));
+            }
+        }
+        fn points_1(ii: Box<Iterator<Item=i16>>, j: i16) -> Vec<Point> {
+            ii.map(|i| Point(i, j)).collect()
+        }
+        fn points_2(i: i16, jj: Box<Iterator<Item=i16>>) -> Vec<Point> {
+            jj.map(|j| Point(i, j)).collect()
+        }
+    }
+
+    #[test]
     fn test_parse_string() {
         let str0 = r#"
           *.*.*.*.*A*a*a
@@ -43,11 +72,11 @@ mod test {
     #[test]
     fn test_permutations() {
         let perm0 = create_default_permutation(4);
-        assert_eq!("[0, 1, 2, 3]", perm0.nice());
+        assert_eq!(vec![0, 1, 2, 3], perm0);
         let mut random = IsaacRng::new_from_u64(123);
-        assert_eq!("[2, 0, 1, 3]", copy_shuffled_permutation(&perm0, &mut random).nice());
-        assert_eq!("[3, 2, 1, 0]", copy_shuffled_permutation(&perm0, &mut random).nice());
-        assert_eq!("[2, 1, 3, 0]", copy_shuffled_permutation(&perm0, &mut random).nice());
+        assert_eq!(vec![2, 0, 1, 3], copy_shuffled_permutation(&perm0, &mut random));
+        assert_eq!(vec![3, 2, 1, 0], copy_shuffled_permutation(&perm0, &mut random));
+        assert_eq!(vec![2, 1, 3, 0], copy_shuffled_permutation(&perm0, &mut random));
     }
 
     // http://play.rust-lang.org/?gist=ed56c0ea31c17399545386416af5b56c

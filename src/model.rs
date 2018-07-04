@@ -23,7 +23,7 @@ enum Cell {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub struct Point(i16, i16);
+pub struct Point(pub i16, pub i16);
 
 pub enum Move {
     Right, Up, Left, Down, Stop,
@@ -282,7 +282,7 @@ fn create_origins_perm(m: usize, n: usize, perm: Vec<u8>) -> Vec<Point> {
 }
 
 
-fn border_to_point(rows: usize, cols: usize, pos: usize) -> Point {
+pub fn border_to_point(rows: usize, cols: usize, pos: usize) -> Point {
     let m = rows as i16;
     let n = cols as i16;
     let pos = (pos as i16) % (2 * (m + n) - 4);
