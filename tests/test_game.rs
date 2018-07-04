@@ -97,6 +97,17 @@ mod test {
         assert_eq!(vec![2, 1, 3, 0], copy_shuffled_permutation(&perm0, &mut random));
     }
 
+
+
+
+
+
+
+
+
+
+
+
     // http://play.rust-lang.org/?gist=ed56c0ea31c17399545386416af5b56c
     trait Nice {
         fn nice(&self) -> String;
