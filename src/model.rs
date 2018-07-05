@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use rand::prelude::{Rng, RngCore};
 use rand::isaac::IsaacRng;
-use regex::Regex;
+use regex::{Regex, Match};
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -208,7 +208,7 @@ impl GameState {
         let player_names = (0..np).map(|i| format!("player-{}", i)).collect();
         let gs = GameState { field, player_names, players, origins, reordering };
         eprintln!("gs = {:?}", gs);
-        return Err(ParseError)
+        Err(ParseError)
     }
 
     pub fn parse_string_rest(np: usize, rest: &Vec<&str>) -> Result<ParseRestResult, ParseError> {
@@ -220,9 +220,9 @@ impl GameState {
             let l = lr.next().unwrap().trim();
             let r = lr.next().unwrap().trim();
             if l == "reordering" {
-                let caps1_ = Regex::new("\\[(.*?)]").unwrap().captures(r);
-                if caps1_.is_some() {
-                    let caps1 = caps1_.unwrap();
+                let caps1 = Regex::new("\\[(.*?)]").unwrap().captures(r);
+                if caps1.is_some() {
+                    let caps1 = caps1.unwrap();
                     let list: Vec<u8> = caps1.get(1).unwrap().as_str()
                         .split(",")
                         .map(|s: &str| s.trim().parse::<u8>().unwrap())
@@ -235,12 +235,12 @@ impl GameState {
                     reordering = Some(list);
                 }
             } else if l == "stats" {
-                let caps1_ = Regex::new("Stats\\((.*?)\\)").unwrap().captures(r);
-                if caps1_.is_some() {
-                    let c1 = caps1_.unwrap().get(1).unwrap().as_str();
-                    let caps2_ = Regex::new("(\\d+),(\\d+),(\\d+),(\\d+),(\\d+),\\[(.*?)]").unwrap().captures(c1);
-                    if caps2_.is_some() {
-                        let c2 = caps2_.unwrap();
+                let caps1 = Regex::new("Stats\\((.*?)\\)").unwrap().captures(r);
+                if caps1.is_some() {
+                    let caps1 = caps1.unwrap().get(1).unwrap().as_str();
+                    let caps2 = Regex::new("(\\d+),(\\d+),(\\d+),(\\d+),(\\d+),\\[(.*?)]").unwrap().captures(caps1);
+                    if caps2.is_some() {
+                        let c2 = caps2.unwrap();
                         let a1 = c2.get(1).unwrap().as_str().parse::<u16>().unwrap();
                         let a2 = c2.get(2).unwrap().as_str().parse::<u16>().unwrap();
                         let a3 = c2.get(3).unwrap().as_str().parse::<u16>().unwrap();
@@ -250,6 +250,9 @@ impl GameState {
                             .split(",")
                             .map(|s: &str| s.trim().parse::<u16>().unwrap())
                             .collect();
+                        if scores.len() != np {
+                            return Err(ParseError);
+                        }
                         stats = Some(Stats {
                             iteration: a1,
                             filled_count: a2,
@@ -260,66 +263,26 @@ impl GameState {
                         });
                     }
                 }
-
+            } else if l == "origins" {
+                let caps1 = Regex::new("\\[(.*?)]").unwrap().captures(r);
+                if caps1.is_some() {
+                    let caps1 = caps1.unwrap().get(1).unwrap().as_str();
+                    let caps2 = Regex::new("\\((\\d+),(\\d+)\\),?").unwrap();
+                    let mut list: Vec<Point> = vec![];
+                    for c2 in caps2.captures_iter(caps1) {
+                        let i = c2.get(1).unwrap().as_str().parse::<i16>().unwrap();
+                        let j = c2.get(2).unwrap().as_str().parse::<i16>().unwrap();
+                        list.push(Point(i, j))
+                    }
+                    if list.len() != np {
+                        return Err(ParseError);
+                    }
+                    origins = Some(list);
+                }
             }
-
         }
         Ok(ParseRestResult { reordering, origins, stats })
     }
-/*
-    private static ParseRestResult parseRest(int np, List<String> rest) {
-        Optional<List<Integer>> reordering = Optional.empty();
-        Optional<List<Point>> origins = Optional.empty();
-        Optional<Stats> stats = Optional.empty();
-        for (String str : rest) {
-            String[] lr = str.split("=");
-            String l = lr[0].trim();
-            String r = lr[1].trim();
-            switch (l) {
-                case "stats": {
-                    Matcher m1 = Pattern.compile("Stats\\((.*?)\\)").matcher(r);
-                    if (m1.matches()) {
-                        Matcher m2 = Pattern.compile("(\\d+),(\\d+),(\\d+),(\\d+),(\\d+),\\[(.*?)]")
-                            .matcher(m1.group(1));
-                        if (m2.matches()) {
-                            int a1 = Integer.parseInt(m2.group(1));
-                            int a2 = Integer.parseInt(m2.group(2));
-                            int a3 = Integer.parseInt(m2.group(3));
-                            int a4 = Integer.parseInt(m2.group(4));
-                            int a5 = Integer.parseInt(m2.group(5));
-                            List<Integer> scores = Arrays.stream(m2.group(6).split(","))
-                                .map(s -> Integer.parseInt(s.trim()))
-                                .collect(toCollection(ArrayList::new));
-                            stats = Optional.of(new Stats(a1, a2, a3, a4, a5, scores));
-                        }
-                    }
-                    break;
-                }
-                case "origins": {
-                    Matcher m1 = Pattern.compile("\\[(.*?)]").matcher(r);
-                    if (m1.matches()) {
-                        Matcher m2 = Pattern.compile("\\((\\d+),(\\d+)\\),?").matcher(m1.group(1));
-                        List<Point> list = new ArrayList<>();
-                        while (m2.find()) {
-                            list.add(Point.of(
-                                Integer.parseInt(m2.group(1)),
-                                Integer.parseInt(m2.group(2))
-                            ));
-                        }
-                        if (list.size() != np) {
-                            throw new RuntimeException("Cannot parse, np=" + np + " rest=" + rest);
-                        }
-                        origins = Optional.of(list);
-                    }
-                    break;
-                }
-                default:
-                    throw new RuntimeException("Unexpected key: " + l);
-            }
-        }
-        return new ParseRestResult(reordering, origins, stats);
-    }
-*/
 
     fn to_string(&self) -> String {
         unimplemented!()

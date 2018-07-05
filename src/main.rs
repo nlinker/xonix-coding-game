@@ -24,7 +24,7 @@ fn main() {
         .filter(|s| !s.is_empty())
         .collect();
     let prr = GameState::parse_string_rest(4, &rest);
-    eprintln!("rest = {:#?}", prr);
+    eprintln!("rest = {:?}", prr);
 }
 
 //fn main() {
