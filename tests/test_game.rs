@@ -83,8 +83,9 @@ mod test {
           stats=Stats(19,33,2,1,0,[1,2,9,1])
           origins=[(0,6),(4,6),(4,0),(0,0)]
         "#.trim_indent();
-        let gs = GameState::parse_string(&str0[..]);
-        println!("\n-----------\n{:?}", gs)
+        let gs = GameState::parse_string(&str0[..]).unwrap();
+        let str1 = gs.to_string();
+        assert_eq!(str0, str1);
     }
 
     #[test]

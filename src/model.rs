@@ -14,6 +14,8 @@ use std::collections::hash_map::Entry;
 use rand::prelude::{Rng, RngCore};
 use rand::isaac::IsaacRng;
 use regex::{Regex, Match};
+use itertools::free::join;
+use std::fmt::Write;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -53,15 +55,17 @@ pub struct Stats {
 }
 
 /// _player_names_ is player names
+#[derive(Eq, PartialEq, Debug)]
 pub struct GameState {
     pub field: Field,
-    pub player_names: Vec<String>,
     pub players: Vec<Player>,
+    pub player_names: Vec<String>,
     pub origins: Vec<Point>,
+    pub stats: Stats,
     pub reordering: Vec<u8>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Player(pub Vec<Point>);
 
 #[derive(Clone, Debug)]
@@ -131,7 +135,7 @@ impl GameState {
                 let c = layer0[i][j];
                 let cell = if c == ('*' as u8) {
                     Cell::Border
-                } else if ('0' as u8) < c && c < ('9' as u8) {
+                } else if ('0' as u8) <= c && c <= ('9' as u8) {
                     Cell::Owned(c - ('0' as u8))
                 } else {
                     Cell::Empty
@@ -147,7 +151,9 @@ impl GameState {
                 let mut cp = Some(body[0]);
                 let ct = ('a' as u8) + k; // the player's tail char
                 while cp.is_some() {
-                    // seek for lower letter around until not found
+                    // seek for lowercase letter around the current point
+                    // if something found, then add the point to the current body
+                    // otherwise consider the body fully built
                     let t = cp.unwrap();
                     let point0 = neigh.iter().map(|Point(ni, nj)| {
                         let Point(mut i, mut j) = t;
@@ -164,13 +170,15 @@ impl GameState {
                     cp = point0;
                 }
             } else {
-                //body is empty => do nothing, the player has been killed maybe
+                // what to do if the body is empty?
+                // so far just skip it
             }
         }
+
         let np = players_map.len();
+        // calculate statistics
         let mut filled_count = 0;
         let mut scores = vec![0u16; np];
-        // calculate scores
         for i in 0..m {
             for j in 0..n {
                 match cells[i][j] {
@@ -185,16 +193,17 @@ impl GameState {
                 }
             }
         }
-        // initialize origins by the number of players
-        let mut players = vec![Player(vec![]); np];
+
+        let mut players = Vec::<Player>::with_capacity(np);
         for k in 0..np {
-            // to avoid
+            // to avoid the error 'cannot borrow from indexed context'
+            // we need to remove the bodies from players_map
             let pts = players_map.remove(&(k as u8)).unwrap();
             players.push(Player(pts));
         }
         let field = Field { m, n, cells };
-        // reordering and stats
-        let triple = GameState::parse_string_rest(np, &rest).unwrap();
+        // parse reordering, origins and stats from the rest
+        let triple = GameState::parse_string_rest(np, &rest)?;
         let reordering = triple.reordering.unwrap_or_else(|| create_default_permutation(np));
         let origins = triple.origins.unwrap_or_else(|| create_origins_n(m, n, np));
         let stats = triple.stats.unwrap_or_else(|| Stats {
@@ -206,9 +215,7 @@ impl GameState {
             scores,
         });
         let player_names = (0..np).map(|i| format!("player-{}", i)).collect();
-        let gs = GameState { field, player_names, players, origins, reordering };
-        eprintln!("gs = {:?}", gs);
-        Err(ParseError)
+        Ok(GameState { field, players, player_names, origins, stats, reordering })
     }
 
     pub fn parse_string_rest(np: usize, rest: &Vec<&str>) -> Result<ParseRestResult, ParseError> {
@@ -283,9 +290,87 @@ impl GameState {
         }
         Ok(ParseRestResult { reordering, origins, stats })
     }
+}
 
-    fn to_string(&self) -> String {
-        unimplemented!()
+//impl fmt::Debug for GameState {
+//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//        f.write_str(&self.field.m.to_string());
+//        f.write_str(&self.field.n.to_string());
+//        Ok(())
+//    }
+//}
+
+impl fmt::Display for Point {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_char('(');
+        fmt.write_str(&self.0.to_string());
+        fmt.write_char(',');
+        fmt.write_str(&self.1.to_string());
+        fmt.write_char(')');
+        Ok(())
+    }
+}
+
+impl fmt::Display for GameState {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let m = self.field.m;
+        let n = self.field.n;
+        let np = self.players.len();
+
+        let mut layer0 = vec![vec![' ' as u8; n]; m];
+        let mut layer1 = vec![vec!['.' as u8; n]; m];
+        for i in 0..m {
+            for j in 0..n {
+                let cell = self.field.cells[i][j];
+                match cell {
+                    Cell::Empty => {layer0[i][j] = ' ' as u8}
+                    Cell::Border => {layer0[i][j] = '*' as u8}
+                    Cell::Owned(c) => layer0[i][j] = ('0' as u8) + c,
+                }
+            }
+        }
+        for k in 0..np {
+            let player = &self.players[k].0;
+            let ch = ('A' as u8) + (k as u8);
+            for l in 0..player.len() {
+                let i = player[l].0 as usize;
+                let j = player[l].1 as usize;
+                // if it is the last element == player's head
+                if l == player.len() - 1 {
+                    layer1[i][j] = ch;
+                } else {
+                    layer1[i][j] = ch.to_ascii_lowercase();
+                }
+            }
+        }
+        // now put all the stuff
+        for i in 0..m {
+            for j in 0..n {
+                fmt.write_char(layer0[i][j] as char);
+                fmt.write_char(layer1[i][j] as char);
+            }
+            fmt.write_char('\n');
+        }
+        fmt.write_str("reordering=[");
+        fmt.write_str(&join(&self.reordering[..], &","));
+        fmt.write_str("]\n");
+
+        fmt.write_str("stats=Stats(");
+        fmt.write_str(&format!("{},{},{},{},{},[",
+            &self.stats.iteration,
+            &self.stats.filled_count,
+            &self.stats.head_to_head_count,
+            &self.stats.ouroboros_count,
+            &self.stats.bite_count
+        ));
+        fmt.write_str(&join(&self.stats.scores[..], &","));
+        fmt.write_str("])\n");
+
+        fmt.write_str("origins=[");
+        fmt.write_str(&join(&self.origins[..], &","));
+        fmt.write_str("]");
+
+        Ok(())
     }
 }
 
@@ -389,14 +474,6 @@ pub struct ParseRestResult {
     stats: Option<Stats>,
 }
 
-
-impl fmt::Debug for GameState {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.field.m.to_string());
-        f.write_str(&self.field.n.to_string());
-        Ok(())
-    }
-}
 
 //struct ParseError;
 //

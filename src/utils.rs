@@ -118,3 +118,18 @@ impl fmt::Debug for IsaacCore0 {
             .finish()
     }
 }
+
+//pub fn join<T, I: Iterator<Item = &str>>(xs: I, sep: &T) -> Vec<T> {
+//    let size = xs.iter().fold(0, |acc, v| acc + v.borrow().len());
+//    let mut result = Vec::with_capacity(size + xs.len());
+//    let mut first = true;
+//    for v in xs {
+//        if first {
+//            first = false
+//        } else {
+//            result.push(sep.clone())
+//        }
+//        result.extend_from_slice(v.borrow())
+//    }
+//    result
+//}

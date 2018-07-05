@@ -1,6 +1,6 @@
 extern crate rand;
 
-use rand::prelude::{RngCore, SeedableRng};
+//use rand::prelude::{RngCore, SeedableRng};
 
 struct TestBot<'a> {
     path: &'a str,
