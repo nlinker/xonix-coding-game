@@ -16,6 +16,9 @@ use rand::isaac::IsaacRng;
 use regex::{Regex, Match};
 use itertools::free::join;
 use std::fmt::Write;
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::rc::Rc;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -25,7 +28,7 @@ pub enum Cell {
     Owned(u8),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash)]
 pub struct Point(pub i16, pub i16);
 
 pub enum Move {
@@ -467,6 +470,66 @@ pub fn border_to_point(height: usize, width: usize, pos: usize) -> Point {
     }
 }
 
+pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<Point> {
+
+    let m = field.m as i16;
+    let n = field.n as i16;
+    let neighbors = vec![Point(0, -1), Point(-1, 0), Point(0, 1), Point(1, 0)];
+
+    // result is the growing set of points describing the filled area
+    let mut result: HashSet<Point> = HashSet::new();
+
+    let has_inside: Box<Fn(Point)->bool> = Box::new(|Point(i, j)| {
+        0 <= i && i < m && 0 <= j && j < n
+    });
+
+    let in_area: Box<Fn(Point)->bool> = Box::new(|p| {
+        let cell = field.cells[p.0 as usize][p.1 as usize];
+        has_inside(p) && !result.contains(&p) && !boundary.contains(&p) && cell == Cell::Empty
+    });
+
+    // if the starting point on the boundary, return immediately
+//    if !in_area(start) {
+//        return result;
+//    }
+//    // starting point is somewhere inside
+//    let mut queue: VecDeque<Point> = VecDeque::with_capacity(field.m + field.n);
+//    queue.push_back(start);
+//    while !queue.is_empty() {
+//        let cur = queue.pop_front().unwrap();
+//        result.insert(cur);
+//        let mut candidates = neighbors.iter()
+//            .map(|p| Point(cur.0 + p.0, cur.1 + p.1))
+//            .filter(|p| in_area(*p) && !queue.contains(p))
+//            .collect();
+//        queue.append(&mut candidates);
+//    }
+//
+    result.clone()
+}
+
+/*
+    public Set<Point> flood(Field field, Set<Point> boundary, Point start) {
+
+
+        while (!queue.isEmpty()) {
+            Point cur = queue.pollFirst();
+            result.add(cur);
+            List<Point> candidates = neighbors.stream()
+                .map(pnt -> Point.of(cur.getRow() + pnt.getRow(), cur.getCol() + pnt.getCol()))
+                .filter(pnt -> area.test(pnt) && !queue.contains(pnt))
+                .collect(toList());
+            queue.addAll(candidates);
+        }
+        return result;
+    }
+*/
+
+fn has_inside(field: &Field, p: Point) -> bool {
+    let Point(i, j) = p;
+    0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct ParseRestResult {
     reordering: Option<Vec<u8>>,
@@ -481,12 +544,6 @@ pub struct ParseRestResult {
 //    type Err = ParseError;
 //    fn from_str(s: &str) -> Result<Self, Self::Err> {
 //        Err(ParseError)
-//    }
-//}
-//
-//impl fmt::Display for GameState {
-//    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-//        unimplemented!()
 //    }
 //}
 

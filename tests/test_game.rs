@@ -2,7 +2,6 @@ extern crate xcg;
 extern crate rand;
 
 extern crate core;
-
 #[cfg(test)]
 mod test {
 
@@ -10,6 +9,8 @@ mod test {
     use xcg::model::*;
     use rand::IsaacRng;
     use core::fmt::Debug;
+    use std::collections::HashSet;
+    use core::iter::FromIterator;
 
     #[test]
     fn test_indent_ops() {
@@ -72,23 +73,6 @@ mod test {
     }
 
     #[test]
-    fn test_parse_string() {
-        let str0 = r#"
-          *.*.*.*.*A*a*a
-          *.3d2.2.2.0.*a
-          *.2D2.2C2.1.*.
-          *.2.2. . .1B*.
-          *.*.*.*.*.*b*b
-          reordering=[2,1,3,0]
-          stats=Stats(19,33,2,1,0,[1,2,9,1])
-          origins=[(0,6),(4,6),(4,0),(0,0)]
-        "#.trim_indent();
-        let gs = GameState::parse_string(&str0[..]).unwrap();
-        let str1 = gs.to_string();
-        assert_eq!(str0, str1);
-    }
-
-    #[test]
     fn test_permutations() {
         let perm0 = create_default_permutation(4);
         assert_eq!(vec![0, 1, 2, 3], perm0);
@@ -98,16 +82,65 @@ mod test {
         assert_eq!(vec![2, 1, 3, 0], copy_shuffled_permutation(&perm0, &mut random));
     }
 
+    #[test]
+    fn test_parse_string() {
+        let str0 = r#"
+            *.*.*.*.*A*a*a
+            *.3d2.2.2.0.*a
+            *.2D2.2C2.1.*.
+            *.2.2. . .1B*.
+            *.*.*.*.*.*b*b
+            reordering=[2,1,3,0]
+            stats=Stats(19,33,2,1,0,[1,2,9,1])
+            origins=[(0,6),(4,6),(4,0),(0,0)]
+        "#.trim_indent();
+        let gs = GameState::parse_string(&str0[..]).unwrap();
+        let str1 = gs.to_string();
+        assert_eq!(str0, str1);
+    }
+
+    #[test]
+    fn test_score() {
+        let gs = game_state(r#"
+            *.*.*.*.*.*.*.
+            *.0. A1.1.1.*.
+            *. a a B b2D*.
+            *.3C3.3. .2.*.
+            *.*.* *.*.*.*.
+        "#);
+        let stats = gs.stats;
+        assert_eq!( vec![1, 3, 2, 3], stats.scores);
+        assert_eq!( 29, stats.filled_count);
+    }
+
+    #[test]
+    fn test_flood() {
+        let gs: GameState = game_state(r#"
+            *.*.*.*.*.*.*.
+            *. . .1. . .*.
+            *a a a a a A*.
+            *. .1. . . .*.
+            *.*.*.*.*.*.*B
+        "#);
+        let all: Vec<Point> = gs.players.iter()
+            .flat_map(|p| p.0.clone())
+            .collect();
+        let bodies = HashSet::from_iter(all);
+        let points1: HashSet<Point> = [Point(1, 1), Point(1, 2)].iter().cloned().collect();
+        let points2: HashSet<Point> = [].iter().cloned().collect();
+        let points3: HashSet<Point> = [Point(3, 3), Point(3, 4), Point(3, 5)].iter().cloned().collect();
+        assert_eq!(points1, flood(&gs.field, &bodies, Point(1, 1)));
+        assert_eq!(points2, flood(&gs.field, &bodies, Point(3, 2)));
+        assert_eq!(points3, flood(&gs.field, &bodies, Point(3, 3)));
+
+    }
 
 
 
 
-
-
-
-
-
-
+    fn game_state(gs: &str) -> GameState {
+        GameState::parse_string(&gs.trim_indent()).unwrap()
+    }
 
     // http://play.rust-lang.org/?gist=ed56c0ea31c17399545386416af5b56c
     trait Nice {
