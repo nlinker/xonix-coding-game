@@ -80,10 +80,15 @@ pub struct ParseError;
 
 impl Player {
     fn head(&self) -> Option<&Point> {
-        self.0.first()
+        // the last element in the vector
+        if self.0.is_empty() { None } else { Some(&self.0[self.0.len() - 1]) }
     }
     fn tail(&self) -> Option<&[Point]>{
-        Some(&self.0[1..])
+        // all elements except the vector
+        if self.0.is_empty() { None } else { Some(&self.0[0..self.0.len() - 1]) }
+    }
+    fn body(&self) -> &[Point] {
+        &self.0[..]
     }
 }
 
@@ -580,6 +585,7 @@ pub fn calculate_flood_area(field: &Field, body: &Vec<Point>) -> Vec<Point> {
 pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
     let index = idx as usize;
     let np = gs.players.len();
+    let players = &gs.players;
 
     let old_head = *gs.players[index].head().unwrap();
     let new_head = calculate_head(&gs.field, old_head, mv);
@@ -593,13 +599,31 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
     let old_cell = cells[old_head.0 as usize][old_head.1 as usize];
     let new_cell = cells[new_head.0 as usize][new_head.1 as usize];
     // detect a collision
-    let collision0: Vec<(usize, &Vec<Point>)> = (0..np)
-        .filter(|k| gs.players[*k].0.contains(&new_head))
-        .map(|k| (k, &gs.players[k].0))
-        .collect();
+    let collision = (0..np)
+        .filter(|k| gs.players[*k].body().contains(&new_head))
+        .map(|k| (k as u8, &gs.players[k]))
+        .collect::<Vec<(u8, &Player)>>();
+    if new_head != old_head && !collision.is_empty() {
+        let (coll_idx, coll_player) = collision.first().unwrap();
+        let coll_head = *coll_player.head().unwrap();
+        if new_head == coll_head {
+            // the player bumps with the other player's head
+            // stats.
+        } else if *coll_idx == idx {
+            // the player eats itself
+        } else {
+            // the player `index` moves, and other player `coll_idx` dies,
+            // if the current player was on the empty cell, its tail increases
+            // otherwise it just moves to the next cell
+            eprintln!("collision = {:?}", collision);
+        }
+    } else if new_head != old_head && old_cell != Cell::Empty {
 
-    eprintln!("coll = {:#?}", collision0);
+    } else if new_head != old_head && new_cell != Cell::Empty {
 
+    } else if new_head != old_head {
+
+    }
 }
 
 fn calculate_head(field: &Field, old_p: Point, mv: Move) -> Point {

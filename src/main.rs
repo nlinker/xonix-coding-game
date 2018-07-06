@@ -24,13 +24,13 @@ fn main() {
 
     let mut gs: GameState = GameState::parse_string(&r#"
         *.* *.*.*.*.*.
+        *. b b b B .*.
         *. A . . . .*.
         *. . . . . .*.
-        *. . . . . .*.
-        *.*.*.*.*.*.*B
+        *.*.*.*.*.*.*.
     "#.trim_indent()).unwrap();
     step(&mut gs, 0, Move::Up);
-    eprintln!("pts = {:?}", gs);
+    // eprintln!("pts = {:?}", gs);
 
 }
 
