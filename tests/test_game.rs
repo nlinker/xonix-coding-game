@@ -1,12 +1,13 @@
-extern crate xcg;
-extern crate rand;
-
 extern crate core;
+extern crate rand;
+extern crate xcg;
+
 #[cfg(test)]
 mod test {
 
     use xcg::utils::Trim;
     use xcg::model::*;
+    use xcg::test::TestBot;
     use rand::IsaacRng;
     use core::fmt::Debug;
     use std::collections::HashSet;
@@ -134,9 +135,39 @@ mod test {
         assert_eq!(points3, flood(&gs.field, &bodies, Point(3, 3)));
     }
 
+    #[test]
+    fn test_flood_step() {
+        let gs0 = game_state(r#"
+            *.*.*.*.*.*.*.
+            *. b B . A .*.
+            *. a a a a .*.
+            *. . . . . .*.
+            *.*.*.*.*.*.*.
+        "#);
+        let a = test_bot("u");
+        let gs1 = play(&gs0, &[a]);
+        let mut gs2 = game_state(r#"
+            *.*.*.*.*A*.*.
+            *.0.0B0.0. .*.
+            *.0.0.0.0. .*.
+            *. . . . . .*.
+            *.*.*.*.*.*.*.
+        "#);
+        gs2.stats.iteration = 1;
+        assert_eq!(gs2.stats, gs1.stats);
+        assert_eq!(gs2, gs1);
+    }
 
     fn game_state(gs: &str) -> GameState {
         GameState::parse_string(&gs.trim_indent()).unwrap()
+    }
+
+    fn test_bot(path: &str) -> TestBot<IsaacRng> {
+        TestBot::new(path)
+    }
+
+    fn play<B: Bot>(gs: &GameState, _bots: &[B]) -> GameState {
+        gs.clone()
     }
 
     // http://play.rust-lang.org/?gist=ed56c0ea31c17399545386416af5b56c
@@ -149,4 +180,5 @@ mod test {
             format!("{:?}", *self)
         }
     }
+
 }

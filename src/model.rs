@@ -31,6 +31,7 @@ pub enum Cell {
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Hash)]
 pub struct Point(pub i16, pub i16);
 
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Move {
     Right, Up, Left, Down, Stop,
 }
@@ -39,7 +40,7 @@ pub enum Move {
 /// - `m` the number of rows
 /// - `n` the number of cols
 /// - `m×n` matrix of cells
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Field {
     pub m: usize,
     pub n: usize,
@@ -58,7 +59,7 @@ pub struct Stats {
 }
 
 /// _player_names_ is player names
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct GameState {
     pub field: Field,
     pub players: Vec<Player>,
@@ -73,6 +74,10 @@ pub struct Player(pub Vec<Point>);
 
 #[derive(Clone, Debug)]
 pub struct ParseError;
+
+pub trait Bot {
+    fn do_move(&mut self, idx: u8, gs: &GameState) -> Move;
+}
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "ParseError is here!") }

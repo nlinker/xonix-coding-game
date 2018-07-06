@@ -10,3 +10,4 @@ extern crate regex;
 
 pub mod model;
 pub mod utils;
+pub mod test;
