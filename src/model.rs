@@ -78,6 +78,15 @@ pub struct Player(pub Vec<Point>);
 #[derive(Clone, Debug)]
 pub struct ParseError;
 
+impl Player {
+    fn head(&self) -> Option<&Point> {
+        self.0.first()
+    }
+    fn tail(&self) -> Option<&[Point]>{
+        Some(&self.0[1..])
+    }
+}
+
 pub trait Bot {
     fn do_move(&mut self, idx: u8, gs: &GameState) -> Move;
 }
@@ -567,6 +576,71 @@ pub fn calculate_flood_area(field: &Field, body: &Vec<Point>) -> Vec<Point> {
     flooded.append(&mut body.clone());
     flooded
 }
+
+pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
+    let index = idx as usize;
+    let np = gs.players.len();
+
+    let old_head = *gs.players[index].head().unwrap();
+    let new_head = calculate_head(&gs.field, old_head, mv);
+    let cells = &gs.field.cells;
+    let mut stats = &gs.stats;
+
+    // the player hasn't effectively moved
+    if old_head == new_head {
+        return;
+    }
+    let old_cell = cells[old_head.0 as usize][old_head.1 as usize];
+    let new_cell = cells[new_head.0 as usize][new_head.1 as usize];
+    // detect a collision
+    let collision0: Vec<(usize, &Vec<Point>)> = (0..np)
+        .filter(|k| gs.players[*k].0.contains(&new_head))
+        .map(|k| (k, &gs.players[k].0))
+        .collect();
+
+    eprintln!("coll = {:#?}", collision0);
+
+}
+
+fn calculate_head(field: &Field, old_p: Point, mv: Move) -> Point {
+    let Point(i, j) = old_p;
+    let (di, dj) = match mv {
+        Move::Right => (0, 1),
+        Move::Up    => (-1, 0),
+        Move::Left  => (0, -1),
+        Move::Down  => (1, 0),
+        Move::Stop  => (0, 0),
+    };
+    let new_p = Point(i + di, j + dj);
+    if has_inside(&field, new_p) { new_p } else { old_p }
+}
+
+/*
+    fn calculate_head(field: &Field, p: Point, Move move) -> Point {
+        int row = bot.getRow();
+        int col = bot.getCol();
+        switch (move) {
+            case UP:
+                row -= (0 <= row - 1) ? 1 : 0;
+                break;
+            case DOWN:
+                row += (row + 1 < field.getHeight()) ? 1 : 0;
+                break;
+            case LEFT:
+                col -= (0 <= col - 1) ? 1 : 0;
+                break;
+            case RIGHT:
+                col += (col + 1 < field.getWidth()) ? 1 : 0;
+                break;
+            case STOP: // stay at position
+                break;
+        }
+        return Point.of(row, col);
+    }
+
+
+*/
+
 
 fn has_inside(field: &Field, p: Point) -> bool {
     let Point(i, j) = p;
