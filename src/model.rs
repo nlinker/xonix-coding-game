@@ -403,7 +403,6 @@ pub fn create_origins(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> 
     let corners = vec![Point(0, 0), Point(m - 1, n - 1), Point(0, n - 1), Point(m - 1, 0)];
     match np {
         0 => {
-            eprintln!("corners = {:?}", corners);
             vec![]
         }
         1 => {
@@ -413,7 +412,6 @@ pub fn create_origins(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> 
         2 => {
             let p0 = index_of(&perm, 0);
             let p1 = index_of(&perm, 1);
-            eprintln!("perm, p0, p1 = {:?} {:#?} {:#?}", perm, p0, p1);
             vec![corners[p0], corners[p1]]
         }
         3 => {
@@ -471,7 +469,6 @@ pub fn border_to_point(height: usize, width: usize, pos: usize) -> Point {
 }
 
 pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<Point> {
-
     let m = field.m as i16;
     let n = field.n as i16;
     let neighbors = vec![Point(0, -1), Point(-1, 0), Point(0, 1), Point(1, 0)];
@@ -479,51 +476,33 @@ pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<
     // result is the growing set of points describing the filled area
     let mut result: HashSet<Point> = HashSet::new();
 
-    let has_inside: Box<Fn(Point)->bool> = Box::new(|Point(i, j)| {
+    let has_inside = |Point(i, j)| {
         0 <= i && i < m && 0 <= j && j < n
-    });
+    };
 
-    let in_area: Box<Fn(Point)->bool> = Box::new(|p| {
-        let cell = field.cells[p.0 as usize][p.1 as usize];
-        has_inside(p) && !result.contains(&p) && !boundary.contains(&p) && cell == Cell::Empty
-    });
+    let in_area = |p, result: &HashSet<Point>| {
+        has_inside(p) && !result.contains(&p) && !boundary.contains(&p) &&
+            field.cells[p.0 as usize][p.1 as usize] == Cell::Empty
+    };
 
     // if the starting point on the boundary, return immediately
-//    if !in_area(start) {
-//        return result;
-//    }
-//    // starting point is somewhere inside
-//    let mut queue: VecDeque<Point> = VecDeque::with_capacity(field.m + field.n);
-//    queue.push_back(start);
-//    while !queue.is_empty() {
-//        let cur = queue.pop_front().unwrap();
-//        result.insert(cur);
-//        let mut candidates = neighbors.iter()
-//            .map(|p| Point(cur.0 + p.0, cur.1 + p.1))
-//            .filter(|p| in_area(*p) && !queue.contains(p))
-//            .collect();
-//        queue.append(&mut candidates);
-//    }
-//
-    result.clone()
-}
-
-/*
-    public Set<Point> flood(Field field, Set<Point> boundary, Point start) {
-
-
-        while (!queue.isEmpty()) {
-            Point cur = queue.pollFirst();
-            result.add(cur);
-            List<Point> candidates = neighbors.stream()
-                .map(pnt -> Point.of(cur.getRow() + pnt.getRow(), cur.getCol() + pnt.getCol()))
-                .filter(pnt -> area.test(pnt) && !queue.contains(pnt))
-                .collect(toList());
-            queue.addAll(candidates);
-        }
+    if !in_area(start, &result) {
         return result;
     }
-*/
+    // if the starting point is somewhere inside, calculate the area
+    let mut queue: VecDeque<Point> = VecDeque::with_capacity(field.m + field.n);
+    queue.push_back(start);
+    while !queue.is_empty() {
+        let cur = queue.pop_front().unwrap();
+        result.insert(cur);
+        let mut candidates = neighbors.iter()
+            .map(|p| Point(cur.0 + p.0, cur.1 + p.1))
+            .filter(|p| in_area(*p, &result) && !queue.contains(p))
+            .collect();
+        queue.append(&mut candidates);
+    }
+    result
+}
 
 fn has_inside(field: &Field, p: Point) -> bool {
     let Point(i, j) = p;

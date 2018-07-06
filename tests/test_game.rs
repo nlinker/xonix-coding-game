@@ -132,10 +132,7 @@ mod test {
         assert_eq!(points1, flood(&gs.field, &bodies, Point(1, 1)));
         assert_eq!(points2, flood(&gs.field, &bodies, Point(3, 2)));
         assert_eq!(points3, flood(&gs.field, &bodies, Point(3, 3)));
-
     }
-
-
 
 
     fn game_state(gs: &str) -> GameState {
