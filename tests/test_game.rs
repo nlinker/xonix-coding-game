@@ -118,21 +118,21 @@ mod test {
     fn test_flood() {
         let gs: GameState = game_state(r#"
             *.*.*.*.*.*.*.
-            *. . .1. . .*.
-            *a a a a a A*.
             *. .1. . . .*.
+            *. a a a a A*.
+            *. . .1. . .*.
             *.*.*.*.*.*.*B
         "#);
         let all: Vec<Point> = gs.players.iter()
             .flat_map(|p| p.0.clone())
             .collect();
         let bodies = HashSet::from_iter(all);
-        let points1: HashSet<Point> = [Point(1, 1), Point(1, 2)].iter().cloned().collect();
-        let points2: HashSet<Point> = [].iter().cloned().collect();
-        let points3: HashSet<Point> = [Point(3, 3), Point(3, 4), Point(3, 5)].iter().cloned().collect();
-        assert_eq!(points1, flood(&gs.field, &bodies, Point(1, 1)));
-        assert_eq!(points2, flood(&gs.field, &bodies, Point(3, 2)));
-        assert_eq!(points3, flood(&gs.field, &bodies, Point(3, 3)));
+        let points1: HashSet<Point> = [].iter().cloned().collect();
+        let points2: HashSet<Point> = [Point(1, 1)].iter().cloned().collect();
+        let points3: HashSet<Point> = [Point(3, 5), Point(3, 4)].iter().cloned().collect();
+        assert_eq!(points1, flood(&gs.field, &bodies, Point(2, 2)));
+        assert_eq!(points2, flood(&gs.field, &bodies, Point(1, 1)));
+        assert_eq!(points3, flood(&gs.field, &bodies, Point(3, 4)));
     }
 
     #[test]

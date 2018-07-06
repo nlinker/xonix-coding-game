@@ -7,7 +7,7 @@ extern crate regex;
 extern crate itertools;
 
 use byteorder::{ByteOrder, LittleEndian};
-use rand::prelude::{RngCore, SeedableRng, SmallRng, FromEntropy};
+use rand::prelude::{Rng, RngCore, SeedableRng, SmallRng, FromEntropy};
 use rand::prng::XorShiftRng;
 use rand::IsaacRng;
 use std::mem::transmute_copy;
@@ -27,7 +27,7 @@ fn main() {
     let gs: GameState = GameState::parse_string(&r#"
         *.*.*.*.*.*.*.
         *. . .1. . .*.
-        *a a a a a A*.
+        *. a a a a A*.
         *. .1. . . .*.
         *.*.*.*.*.*.*B
     "#.trim_indent()).unwrap();
