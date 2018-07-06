@@ -19,6 +19,8 @@ use std::fmt::Write;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::rc::Rc;
+use std::cmp::Ordering;
+use itertools::Itertools;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -28,7 +30,8 @@ pub enum Cell {
     Owned(u8),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash)]
+/// Note `Ord` defined below
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash, PartialOrd)]
 pub struct Point(pub i16, pub i16);
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -86,6 +89,18 @@ impl fmt::Display for ParseError {
 impl Error for ParseError {
     fn description(&self) -> &str { "Cannot parse the string to GameState" }
     fn cause(&self) -> Option<&Error> { None }
+}
+
+impl Ord for Point {
+    fn cmp(&self, other: &Point) -> Ordering {
+        if self.0 < other.0 {
+            Ordering::Less
+        } else if self.0 > other.0 {
+            Ordering::Greater
+        } else {
+            self.1.cmp(&other.1)
+        }
+    }
 }
 
 impl GameState {
@@ -484,12 +499,12 @@ pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<
     let has_inside = |Point(i, j)| {
         0 <= i && i < m && 0 <= j && j < n
     };
-
     let in_area = |p, result: &HashSet<Point>| {
-        has_inside(p) && !result.contains(&p) && !boundary.contains(&p) &&
-            field.cells[p.0 as usize][p.1 as usize] == Cell::Empty
+        has_inside(p)
+            && !result.contains(&p)
+            && !boundary.contains(&p)
+            && field.cells[p.0 as usize][p.1 as usize] == Cell::Empty
     };
-
     // if the starting point on the boundary, return immediately
     if !in_area(start, &result) {
         return result;
@@ -507,6 +522,50 @@ pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<
         queue.append(&mut candidates);
     }
     result
+}
+
+pub fn calculate_flood_area(field: &Field, body: &Vec<Point>) -> Vec<Point> {
+    let neighbors = vec![Point(0, -1), Point(-1, 0), Point(0, 1), Point(1, 0)];
+    let boundary: HashSet<Point> = body.iter().cloned().collect();
+    let mut areas: Vec<HashSet<Point>> = vec![];
+
+    let in_areas: Box<Fn(Point, &Vec<HashSet<Point>>) -> bool> = Box::new(|p, areas| {
+        areas.iter().any(|ps| ps.contains(&p))
+    });
+
+    for b in body.iter() {
+        // search in the neighborhood of p empty areas
+        // empty means not only empty surface but also free of players
+        let mut starts: Vec<Point> = neighbors.iter()
+            .map(|p| Point(b.0 + p.0, b.1 + p.1))
+            .filter(|p| has_inside(&field, *p)
+                && field.cells[p.0 as usize][p.1 as usize] == Cell::Empty
+                && !boundary.contains(p)
+                && !in_areas(*p, &areas))
+            .collect();
+        for sp in starts {
+            if !in_areas(sp, &areas) {
+                let flood = flood(&field, &boundary, sp);
+                areas.push(flood);
+            }
+        }
+    }
+    // to handle the case, add a phony empty area
+    // * A * * * B
+    // * a       *
+    // *         *
+    // D * * * * C
+    if areas.len() <= 1 {
+        areas.push(HashSet::new());
+    }
+    // seek for the area by the minimum size
+    let mut flooded: Vec<Point> = areas.iter()
+        .min_by(|s1, s2| s1.len().cmp(&s2.len())).unwrap()
+        .iter()
+        .map(|p| *p)
+        .collect_vec();
+    flooded.append(&mut body.clone());
+    flooded
 }
 
 fn has_inside(field: &Field, p: Point) -> bool {

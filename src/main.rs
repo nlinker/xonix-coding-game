@@ -13,25 +13,28 @@ use rand::IsaacRng;
 use std::mem::transmute_copy;
 use xcg::utils::{Trim, IsaacRng0};
 use xcg::model::GameState;
+use xcg::model::calculate_flood_area;
 use regex::Regex;
 use xcg::model::Point;
 use std::fmt;
 use itertools::Itertools;
 
-use std::cell::RefCell;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-
 fn main() {
+//    *.*.*.*.*.*.*.
+//    *. . .1. . .*.
+//    *. a a a a A*.
+//    *. .1. . . .*.
+//    *.*.*.*.*.*.*B
 
     let gs: GameState = GameState::parse_string(&r#"
-        *.*.*.*.*.*.*.
-        *. . .1. . .*.
-        *. a a a a A*.
-        *. .1. . . .*.
+        *.* *.*.*.*.*.
+        *. A . . . .*.
+        *. . . . . .*.
+        *. . . . . .*.
         *.*.*.*.*.*.*B
     "#.trim_indent()).unwrap();
-    eprintln!("pts = {}", gs);
+    let xs = calculate_flood_area(&gs.field, &gs.players[0].0);
+    eprintln!("pts = {:?}", xs);
 
 }
 

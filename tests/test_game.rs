@@ -133,6 +133,8 @@ mod test {
         assert_eq!(points1, flood(&gs.field, &bodies, Point(2, 2)));
         assert_eq!(points2, flood(&gs.field, &bodies, Point(1, 1)));
         assert_eq!(points3, flood(&gs.field, &bodies, Point(3, 4)));
+        let flooded_area = calculate_flood_area(&gs.field, &gs.players[0].0);
+        assert_eq!(vec![Point(1, 1), Point(2, 1), Point(2, 2), Point(2, 3), Point(2, 4), Point(2, 5)], flooded_area)
     }
 
     #[test]
