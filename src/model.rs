@@ -585,12 +585,11 @@ pub fn calculate_flood_area(field: &Field, body: &Vec<Point>) -> Vec<Point> {
 pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
     let index = idx as usize;
     let np = gs.players.len();
-    let players = &gs.players;
 
-    let old_head = *gs.players[index].head().unwrap();
+    let old_head = *gs.players[index].head().unwrap(); // XXX handle broken invariant
     let new_head = calculate_head(&gs.field, old_head, mv);
     let cells = &gs.field.cells;
-    let mut stats = &gs.stats;
+    // let mut stats = &gs.stats;
 
     // the player hasn't effectively moved
     if old_head == new_head {
@@ -605,16 +604,26 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
         .collect::<Vec<(u8, &Player)>>();
     if new_head != old_head && !collision.is_empty() {
         let (coll_idx, coll_player) = collision.first().unwrap();
-        let coll_head = *coll_player.head().unwrap();
+        let coll_head = *coll_player.head().unwrap(); // XXX handle broken invariant
         if new_head == coll_head {
             // the player bumps with the other player's head
-            // stats.
+//            gs.stats.head_to_head_count += 1;
         } else if *coll_idx == idx {
             // the player eats itself
+//            respawn_player(gs, idx);
+//            gs.stats.ouroboros_count += 1;
         } else {
             // the player `index` moves, and other player `coll_idx` dies,
             // if the current player was on the empty cell, its tail increases
             // otherwise it just moves to the next cell
+//            respawn_player(gs, *coll_idx);
+//            gs.stats.bite_count += 1;
+//            if old_cell == Cell::Empty {
+//                &gs.players[index].0.push(new_head);
+//            } else {
+//                &gs.players[index].0.clear();
+//                &gs.players[index].0.push(new_head);
+//            }
             eprintln!("collision = {:?}", collision);
         }
     } else if new_head != old_head && old_cell != Cell::Empty {
@@ -637,6 +646,10 @@ fn calculate_head(field: &Field, old_p: Point, mv: Move) -> Point {
     };
     let new_p = Point(i + di, j + dj);
     if has_inside(&field, new_p) { new_p } else { old_p }
+}
+
+fn respawn_player(gs: &mut GameState, idx: u8) {
+
 }
 
 /*
