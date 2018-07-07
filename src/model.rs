@@ -87,8 +87,11 @@ impl Player {
         // all elements except the vector
         if self.0.is_empty() { None } else { Some(&self.0[0..self.0.len() - 1]) }
     }
-    fn body(&self) -> &[Point] {
-        &self.0[..]
+    fn body(&self) -> &Vec<Point> {
+        &self.0
+    }
+    fn body_mut(&mut self) -> &mut Vec<Point> {
+        &mut self.0
     }
 }
 
@@ -586,45 +589,44 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
     let index = idx as usize;
     let np = gs.players.len();
 
-    let old_head = *gs.players[index].head().unwrap(); // XXX handle broken invariant
+    let old_head = *gs.players[index].head().expect("Broken invariant");
     let new_head = calculate_head(&gs.field, old_head, mv);
-    let cells = &gs.field.cells;
     // let mut stats = &gs.stats;
 
     // the player hasn't effectively moved
     if old_head == new_head {
         return;
     }
-    let old_cell = cells[old_head.0 as usize][old_head.1 as usize];
-    let new_cell = cells[new_head.0 as usize][new_head.1 as usize];
+    let old_cell = gs.field.cells[old_head.0 as usize][old_head.1 as usize];
+    let new_cell = gs.field.cells[new_head.0 as usize][new_head.1 as usize];
     // detect a collision
-    let collision = (0..np)
-        .filter(|k| gs.players[*k].body().contains(&new_head))
-        .map(|k| (k as u8, &gs.players[k]))
-        .collect::<Vec<(u8, &Player)>>();
-    if new_head != old_head && !collision.is_empty() {
-        let (coll_idx, coll_player) = collision.first().unwrap();
-        let coll_head = *coll_player.head().unwrap(); // XXX handle broken invariant
+    let collision = (0..np).filter(|k| gs.players[*k].body().contains(&new_head)).next();
+    if new_head != old_head && collision.is_some() {
+        let coll_idx = collision.unwrap();
+        let coll_head = *gs.players[coll_idx].head().expect("Broken invariant");
         if new_head == coll_head {
             // the player bumps with the other player's head
-//            gs.stats.head_to_head_count += 1;
-        } else if *coll_idx == idx {
+            gs.stats.head_to_head_count += 1;
+        } else if coll_idx == index {
             // the player eats itself
-//            respawn_player(gs, idx);
-//            gs.stats.ouroboros_count += 1;
+            let respawn = calculate_respawn(gs, index).expect("Broken invariant");
+            gs.players[index].body_mut().clear();
+            gs.players[index].body_mut().push(respawn);
+            gs.stats.ouroboros_count += 1;
         } else {
             // the player `index` moves, and other player `coll_idx` dies,
             // if the current player was on the empty cell, its tail increases
             // otherwise it just moves to the next cell
-//            respawn_player(gs, *coll_idx);
-//            gs.stats.bite_count += 1;
-//            if old_cell == Cell::Empty {
-//                &gs.players[index].0.push(new_head);
-//            } else {
-//                &gs.players[index].0.clear();
-//                &gs.players[index].0.push(new_head);
-//            }
-            eprintln!("collision = {:?}", collision);
+            let respawn = calculate_respawn(gs, coll_idx).expect("Broken invariant");
+            gs.players[coll_idx].body_mut().clear();
+            gs.players[coll_idx].body_mut().push(respawn);
+            gs.stats.bite_count += 1;
+            if old_cell == Cell::Empty {
+                &gs.players[index].body_mut().push(new_head);
+            } else {
+                &gs.players[index].body_mut().clear();
+                &gs.players[index].body_mut().push(new_head);
+            }
         }
     } else if new_head != old_head && old_cell != Cell::Empty {
 
@@ -648,36 +650,39 @@ fn calculate_head(field: &Field, old_p: Point, mv: Move) -> Point {
     if has_inside(&field, new_p) { new_p } else { old_p }
 }
 
-fn respawn_player(gs: &mut GameState, idx: u8) {
-
-}
-
-/*
-    fn calculate_head(field: &Field, p: Point, Move move) -> Point {
-        int row = bot.getRow();
-        int col = bot.getCol();
-        switch (move) {
-            case UP:
-                row -= (0 <= row - 1) ? 1 : 0;
-                break;
-            case DOWN:
-                row += (row + 1 < field.getHeight()) ? 1 : 0;
-                break;
-            case LEFT:
-                col -= (0 <= col - 1) ? 1 : 0;
-                break;
-            case RIGHT:
-                col += (col + 1 < field.getWidth()) ? 1 : 0;
-                break;
-            case STOP: // stay at position
-                break;
+pub fn calculate_respawn(gs: &GameState, dead_idx: usize) -> Option<Point> {
+    let np = gs.players.len();
+    let mut others = HashSet::new();
+    for k in 0..np {
+        if k != dead_idx {
+            gs.players[k].body().iter().foreach(|p| { others.insert(p); })
         }
-        return Point.of(row, col);
     }
+    let is_accessible = |p: Point| {
+        let i = p.0 as usize;
+        let j = p.1 as usize;
+        has_inside(&gs.field, p) && gs.field.cells[i][j] == Cell::Border && !others.contains(&p)
+    };
 
-
-*/
-
+    // find the closest to the origin nonempty cell
+    let origin = gs.origins[dead_idx];
+    if is_accessible(origin) {
+        return Some(origin);
+    }
+    for r in 1..((gs.field.m + gs.field.n) as i16) {
+        for k in 0..r {
+            let p1 = Point(origin.0 - k, origin.1 + r - k);
+            let p2 = Point(origin.0 - r + k, origin.1 - k);
+            let p3 = Point(origin.0 + k, origin.1 - r + k);
+            let p4 = Point(origin.0 + r - k, origin.1 + k);
+            if is_accessible(p1) { return Some(p1) };
+            if is_accessible(p2) { return Some(p2) };
+            if is_accessible(p3) { return Some(p3) };
+            if is_accessible(p4) { return Some(p4) };
+        }
+    }
+    None
+}
 
 fn has_inside(field: &Field, p: Point) -> bool {
     let Point(i, j) = p;

@@ -160,6 +160,21 @@ mod test {
         assert_eq!(gs2, gs1);
     }
 
+    #[test]
+    fn test_select_respawn() {
+        // A's respawn is the upper left corner
+        let gs0 = game_state(r#"
+            *B*D*E*.*.*.*.
+            *C . . . . .*.
+            *. . . . A .*.
+            *. . . . . .*.
+            *.*.*.*.*.*.*.
+        "#);
+        let respawn = calculate_respawn(&gs0, 0);
+        assert_eq!(respawn, Some(Point(2, 0)))
+    }
+
+
     fn game_state(gs: &str) -> GameState {
         GameState::parse_string(&gs.trim_indent()).unwrap()
     }
