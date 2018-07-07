@@ -12,6 +12,8 @@ mod test {
     use core::fmt::Debug;
     use std::collections::HashSet;
     use core::iter::FromIterator;
+    use std::borrow::Borrow;
+    use std::borrow::BorrowMut;
 
     #[test]
     fn test_indent_ops() {
@@ -147,7 +149,7 @@ mod test {
             *.*.*.*.*.*.*.
         "#);
         let a = test_bot("u");
-        let gs1 = play(&gs0, &[a]);
+        let gs1 = play(&gs0, &mut [a]);
         let mut gs2 = game_state(r#"
             *.*.*.*.*A*.*.
             *.0.0B0.0. .*.
@@ -174,6 +176,10 @@ mod test {
         assert_eq!(respawn, Some(Point(2, 0)))
     }
 
+    #[test]
+    fn test_1() {
+
+    }
 
     fn game_state(gs: &str) -> GameState {
         GameState::parse_string(&gs.trim_indent()).unwrap()
@@ -183,8 +189,26 @@ mod test {
         TestBot::new(path)
     }
 
-    fn play<B: Bot>(gs: &GameState, _bots: &[B]) -> GameState {
-        gs.clone()
+    fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
+        let mut gs = gs.clone();
+        let mut progressing = true;
+        let mut iteration = 0;
+        while progressing {
+            gs.stats.iteration = iteration;
+            iteration += 1;
+            let mut moves = vec![];
+            for k in 0..bots.len() {
+                let idx = gs.reordering[k];
+                // let cgs = game.make_client_game_state(gs, idx);
+                let mv = bots[idx as usize].do_move(idx, gs.borrow());
+                moves.push(mv);
+                step(gs.borrow_mut(), idx, mv);
+            }
+            if moves.iter().all(|m| *m == Move::Stop) {
+                progressing = false;
+            }
+        }
+        gs
     }
 
     // http://play.rust-lang.org/?gist=ed56c0ea31c17399545386416af5b56c

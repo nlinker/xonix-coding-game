@@ -96,6 +96,7 @@ impl Player {
 }
 
 pub trait Bot {
+    // the bot is mutable
     fn do_move(&mut self, idx: u8, gs: &GameState) -> Move;
 }
 
@@ -629,11 +630,61 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
             }
         }
     } else if new_head != old_head && old_cell != Cell::Empty {
-
+        // we stay on the nonempty cell
+        // single head, don't make the tail, just setPoint the head
+        // otherwise we should have made the contour from the previous step
+        if gs.players[index].body().len() > 1 {
+            panic!("Broken invariant");
+        }
+        gs.players[index].body_mut().clear();
+        gs.players[index].body_mut().push(new_head);
     } else if new_head != old_head && new_cell != Cell::Empty {
-
+        // we step from empty to nonempty, calculate the contours
+        // flood area now becomes owned by the current player
+        // flood removes tails if any
+        let flooded = calculate_flood_area(&gs.field, gs.players[index].body());
+        for p in &flooded {
+            let i = p.0 as usize;
+            let j = p.1 as usize;
+            gs.field.cells[i][j] = Cell::Owned(index as u8);
+        }
+        for k in 0..np {
+            if k == index {
+                gs.players[k].body_mut().clear();
+                gs.players[k].body_mut().push(new_head);
+            } else if gs.players[k].body().is_empty() {
+                panic!("Broken invariant");
+            } else {
+                let head = *gs.players[k].head().expect("Broken invariant");
+                let mut rest = gs.players[k].body().iter().filter(|p| {
+                    // if the cell is Owned
+                    let i = p.0 as usize;
+                    let j = p.1 as usize;
+                    match gs.field.cells[i][j] {
+                        Cell::Owned(_) => true,
+                        _ => false
+                    }})
+                    .map(|p| *p)
+                    .collect_vec();
+                // build the k-th body
+                if rest.contains(&head) {
+                    gs.players[k].body_mut().clear();
+                    gs.players[k].body_mut().push(head);
+                } else {
+                    gs.players[k].body_mut().clear();
+                    gs.players[k].body_mut().append(&mut rest);
+                    gs.players[k].body_mut().push(head);
+                }
+            }
+        }
+        // finally update statistics
+        gs.stats.scores[index] += (&flooded).len() as u16;
+        gs.stats.filled_count += (&flooded).len() as u16;
     } else if new_head != old_head {
-
+        // old_cell == Empty && new_cell == Empty (for sure)
+        // we step into empty area, increase the tail
+        // (head is the last element)
+        gs.players[index].body_mut().push(new_head);
     }
 }
 
