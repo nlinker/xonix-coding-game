@@ -177,8 +177,37 @@ mod test {
     }
 
     #[test]
-    fn test_1() {
+    fn test_run_match_with_reordering() {
+        let _a = test_bot("dlu");
+        let _b = test_bot("llurr");
+        let _c = test_bot("urd");
+        let _d = test_bot("rrrdlll");
+        // let bots_factory = || vec![a, b, c, d];
+        let the_match = create_match(5, 7, 20, 0.9, Some(42));
+        let mut gs = game_state(r#"
+            *D*.*.*.*.*.*A
+            *. . . . . .*.
+            *. . . . . .*.
+            *. . . . . .*.
+            *C*.*.*.*.*.*B
+            reordering=[2,1,3,0]
+        "#);
+        gs.origins = vec![Point(0, 6), Point(4, 6), Point(4, 0), Point(0, 0)];
+        assert_eq!(gs, the_match.game_state);
 
+        let logger: Box<Fn(&GameState)> = Box::new(|game_state| {});
+        run_match(the_match, logger);
+        let final_gs = game_state(r#"
+            "*.*.*.*.*.*A*.\n" +
+            "*D3.3.3. .0.*.\n" +
+            "*. . . . . .*.\n" +
+            "*.2. . .1.1.*B\n" +
+            "*.*C*.*.*.*.*.\n" +
+            "reordering=[2,1,3,0]\n" +
+            "stats=Stats(20,27,0,0,0,[1,2,1,3])
+        "#);
+        final_gs.origins = gs.origins.clone();
+        assert_eq!(the_match.game_state, final_gs);
     }
 
     fn game_state(gs: &str) -> GameState {

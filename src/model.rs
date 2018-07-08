@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use rand::prelude::{Rng, RngCore};
 use rand::isaac::IsaacRng;
-use regex::{Regex, Match};
+use regex::{Regex, Match as RegexMatch};
 use itertools::free::join;
 use std::fmt::Write;
 use std::collections::HashSet;
@@ -75,8 +75,24 @@ pub struct GameState {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Player(pub Vec<Point>);
 
+#[derive(Debug)]
+pub struct Match {
+    pub duration: u32,
+    pub ratio: f32,
+    pub game_state: GameState,
+    pub bots: Vec<Box<Bot>>,
+    pub random_seed: Option<u64>,
+}
+
 #[derive(Clone, Debug)]
 pub struct ParseError;
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct ParseRestResult {
+    reordering: Option<Vec<u8>>,
+    origins: Option<Vec<Point>>,
+    stats: Option<Stats>,
+}
 
 impl Player {
     fn head(&self) -> Option<&Point> {
@@ -97,7 +113,12 @@ impl Player {
 
 pub trait Bot {
     // the bot is mutable
+    fn reset(&mut self, idx: u8, gs: &GameState);
     fn do_move(&mut self, idx: u8, gs: &GameState) -> Move;
+}
+
+impl fmt::Debug for Bot {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "bot") }
 }
 
 impl fmt::Display for ParseError {
@@ -349,6 +370,13 @@ impl fmt::Display for Point {
         fmt.write_str(&self.1.to_string());
         fmt.write_char(')');
         Ok(())
+    }
+}
+
+impl FromStr for GameState {
+    type Err = ParseError;
+    fn from_str(str: &str) -> Result<Self, Self::Err> {
+        GameState::parse_string(str)
     }
 }
 
@@ -740,31 +768,19 @@ fn has_inside(field: &Field, p: Point) -> bool {
     0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct ParseRestResult {
-    reordering: Option<Vec<u8>>,
-    origins: Option<Vec<Point>>,
-    stats: Option<Stats>,
+pub fn create_match(
+    m: usize,
+    n: usize,
+    // bots_factory: impl FnOnce() -> &'a Vec<B>,
+    duration: u32,
+    ratio: f32,
+    random_seed: Option<u64>
+) -> Match {
+    let initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
+
+    unimplemented!()
 }
 
+pub fn run_match<'r>(the_match: Match, logger: Box<Fn(&GameState)>) {
 
-//struct ParseError;
-//
-//impl FromStr for GameState {
-//    type Err = ParseError;
-//    fn from_str(s: &str) -> Result<Self, Self::Err> {
-//        Err(ParseError)
-//    }
-//}
-
-//#[stable(feature = "rust1", since = "1.0.0")]
-//impl fmt::Display for Utf8Error {
-//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//        if let Some(error_len) = self.error_len {
-//            write!(f, "invalid utf-8 sequence of {} bytes from index {}",
-//                   error_len, self.valid_up_to)
-//        } else {
-//            write!(f, "incomplete utf-8 byte sequence from index {}", self.valid_up_to)
-//        }
-//    }
-//}
+}
