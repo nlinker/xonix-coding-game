@@ -15,26 +15,60 @@ use std::mem::transmute_copy;
 use std::fmt;
 use itertools::Itertools;
 
-use xcg::utils::{Trim, IsaacRng0};
-use xcg::model::*;
-use xcg::test::TestBot;
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub enum Move {
+    Right, Up, Left, Down, Stop,
+}
 
+trait Bot {
+    // the bot is mutable
+    fn reset(&mut self, idx: u8, gs: &GameState);
+    fn do_move(&mut self, idx: u8, gs: &GameState) -> Move;
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct Stats {
+    pub iteration: u16,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+struct GameState {
+    pub stats: Stats,
+    pub reordering: Vec<u8>,
+}
+
+impl fmt::Display for GameState {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str("GameState")
+    }
+}
+
+////////////////// Bot
+struct TestBot<R: Rng> {
+    path: Vec<u8>,
+    iter: u32,
+    random: Option<R>,
+}
+
+impl<R: Rng> TestBot<R> {
+    pub fn new(s: &str) -> TestBot<R> {
+        let path = s.as_bytes().to_vec();
+        TestBot { path, iter: 0, random: None }
+    }
+}
+
+impl<R: Rng> Bot for TestBot<R> {
+    fn reset(&mut self, _idx: u8, _gs: &GameState) {}
+    fn do_move(&mut self, _idx: u8, _gs: &GameState) -> Move { Move::Stop }
+}
+////////////////// Bot end
 
 fn main() {
-    let gs0 = game_state(r#"
-            *.*.*.*.*.*.*.
-            *. b B . A .*.
-            *. a a a a .*.
-            *. . . . . .*.
-            *.*.*.*.*.*.*.
-        "#);
+    let reordering = vec![0, 1];
+    let gs0 = GameState { stats: Stats { iteration: 0 }, reordering };
     let a = test_bot("u");
     let gs1 = play(&gs0, &mut [a]);
     eprintln!("gs1 = {}", &gs1);
-}
-
-fn game_state(gs: &str) -> GameState {
-    GameState::parse_string(&gs.trim_indent()).unwrap()
 }
 
 fn test_bot(path: &str) -> TestBot<IsaacRng> {
@@ -61,6 +95,10 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
         }
     }
     gs
+}
+
+fn step(gs: &mut GameState, idx: u8, mv: Move) {
+
 }
 
 //fn main() {

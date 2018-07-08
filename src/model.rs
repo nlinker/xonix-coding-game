@@ -651,10 +651,10 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
             gs.players[coll_idx].body_mut().push(respawn);
             gs.stats.bite_count += 1;
             if old_cell == Cell::Empty {
-                &gs.players[index].body_mut().push(new_head);
+                gs.players[index].body_mut().push(new_head);
             } else {
-                &gs.players[index].body_mut().clear();
-                &gs.players[index].body_mut().push(new_head);
+                gs.players[index].body_mut().clear();
+                gs.players[index].body_mut().push(new_head);
             }
         }
     } else if new_head != old_head && old_cell != Cell::Empty {
