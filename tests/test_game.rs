@@ -178,10 +178,12 @@ mod test {
 
     #[test]
     fn test_run_match_with_reordering() {
-        let _a = test_bot("dlu");
-        let _b = test_bot("llurr");
-        let _c = test_bot("urd");
-        let _d = test_bot("rrrdlll");
+        let a = test_bot("dlu");
+        let b = test_bot("llurr");
+        let c = test_bot("urd");
+        let d = test_bot("rrrdlll");
+        let mut _slice = [a, b, c, d];
+        // let _bots: Vec<Box<Bot>> = slice.iter().map(|b| Box::new(*b)).collect();
         // let bots_factory = || vec![a, b, c, d];
         let the_match = create_match(5, 7, 20, 0.9, Some(42));
         let mut gs = game_state(r#"

@@ -6,7 +6,7 @@ use model::GameState;
 use model::Move;
 
 // TODO move it to ../tests/test_bot.rs
-
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct TestBot<R: Rng> {
     path: Vec<u8>,
     iter: u32,
