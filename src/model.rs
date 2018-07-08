@@ -781,6 +781,6 @@ pub fn create_match(
     unimplemented!()
 }
 
-pub fn run_match<'r>(the_match: Match, logger: Box<Fn(&GameState)>) {
+pub fn run_match<'r>(the_match: &Match, logger: Box<Fn(&GameState)>) {
 
 }

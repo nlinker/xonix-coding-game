@@ -195,9 +195,9 @@ mod test {
         gs.origins = vec![Point(0, 6), Point(4, 6), Point(4, 0), Point(0, 0)];
         assert_eq!(gs, the_match.game_state);
 
-        let logger: Box<Fn(&GameState)> = Box::new(|game_state| {});
-        run_match(the_match, logger);
-        let final_gs = game_state(r#"
+        let logger: Box<Fn(&GameState)> = Box::new(|_game_state| {});
+        run_match(&the_match, logger);
+        let mut final_gs = game_state(r#"
             "*.*.*.*.*.*A*.\n" +
             "*D3.3.3. .0.*.\n" +
             "*. . . . . .*.\n" +
