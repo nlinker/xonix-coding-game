@@ -22,6 +22,7 @@ use std::rc::Rc;
 use std::cmp::Ordering;
 use itertools::Itertools;
 use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -771,7 +772,7 @@ fn has_inside(field: &Field, p: Point) -> bool {
     0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
 }
 
-pub fn create_match<B: Bot + Clone>(
+pub fn create_match<B: Bot>(
     height: usize,
     width: usize,
     bots: &[B],
@@ -779,21 +780,22 @@ pub fn create_match<B: Bot + Clone>(
     ratio: f32,
     random_seed: Option<u64>
 ) -> Match {
-    let initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
-    let bots1 = bots.to_vec();
+    let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
     let np = bots.len();
     let field = create_default_field(height, width);
     let perm0 = create_default_permutation(np);
     // permute players if we have random generator
-//    let origin_perm = &initializer_rng
-//        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
-//        .unwrap_or(perm0.clone());
-    let origin_perm = match initializer_rng {
-        Some(mut r) => copy_shuffled_permutation(&perm0, &mut r),
+    let origin_perm = match initializer_rng.borrow_mut() {
+        Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
         None => perm0.clone(),
     };
+    let reordering = match initializer_rng.borrow_mut() {
+        Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
+        None => perm0.clone()
+    };
     let origins = create_origins(height, width, &origin_perm);
-    let players = origins.iter().map(|&o| Player(vec![o]));
+    let players = origins.iter().map(|&o| Player(vec![o])).collect();
+    let player_names = (0..np).map(|k| format!("player_{}", k)).collect();
     let mut filled_count = 0;
     let mut scores = vec![0u16; np];
     for i in 0..height {
@@ -816,11 +818,10 @@ pub fn create_match<B: Bot + Clone>(
         bite_count: 0,
         scores,
     };
-//    let reordering = &initializer_rng
-//        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
-//        .unwrap_or(perm0);
-
-    unimplemented!()
+    let game_state = GameState { field, players, player_names, origins, stats, reordering };
+    let mut bots: Vec<Box<Bot>> = vec![];
+    bots.drain::<Box<Bot>>(bots.iter().map(|b| Box::new(*b)));
+    Match { duration, ratio, game_state, bots, random_seed }
 }
 
 /*

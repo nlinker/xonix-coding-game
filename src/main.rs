@@ -14,6 +14,8 @@ use regex::Regex;
 use std::mem::transmute_copy;
 use std::fmt;
 use itertools::Itertools;
+use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 
 fn main() {
     let random_seed: Option<u64> = Some(42);
@@ -21,16 +23,22 @@ fn main() {
     let perm0 = create_default_permutation(np);
     {
         let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
-        let origin_perm = match &initializer_rng {
-            Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
-            None => perm0.clone(),
-        };
-        let reordering = match &initializer_rng {
-            Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
-            None => perm0.clone()
-        };
-        eprintln!("origin_perm = {:?}", origin_perm);
-        eprintln!("reordering = {:?}", reordering);
+//        let origin_perm = match initializer_rng.borrow_mut() {
+//            Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
+//            None => perm0.clone(),
+//        };
+//        let reordering = match initializer_rng {
+//            Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
+//            None => perm0.clone()
+//        };
+        let origin_perm1 = &mut initializer_rng
+            .map(|ref mut r| copy_shuffled_permutation(&perm0, r))
+            .unwrap_or(perm0.clone());
+        let reordering1 = &mut initializer_rng
+            .map(|ref mut r| copy_shuffled_permutation(&perm0, r))
+            .unwrap_or(perm0.clone());
+        eprintln!("origin_perm = {:?}", origin_perm1);
+        eprintln!("reordering = {:?}", reordering1);
     }
 }
 
