@@ -772,7 +772,7 @@ fn has_inside(field: &Field, p: Point) -> bool {
     0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
 }
 
-pub fn create_match<B: Bot>(
+pub fn create_match<B: Bot + 'static>(
     height: usize,
     width: usize,
     bots: &[B],
@@ -819,9 +819,12 @@ pub fn create_match<B: Bot>(
         scores,
     };
     let game_state = GameState { field, players, player_names, origins, stats, reordering };
-    let mut bots: Vec<Box<Bot>> = vec![];
-    bots.drain::<Box<Bot>>(bots.iter().map(|b| Box::new(*b)));
-    Match { duration, ratio, game_state, bots, random_seed }
+    let mut bots1: Vec<Box<Bot>> = vec![];
+    for k in 0..np {
+        bots1.push(Box::new(bots[k]) as Box<Bot>)
+    }
+
+    Match { duration, ratio, game_state, bots: bots1, random_seed }
 }
 
 /*
