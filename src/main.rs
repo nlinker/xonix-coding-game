@@ -17,36 +17,69 @@ use itertools::Itertools;
 use std::borrow::Borrow;
 use std::borrow::BorrowMut;
 
-fn main() {
-    let random_seed: Option<u64> = Some(42);
-    let np = 4;
-    let perm0 = create_default_permutation(np);
-    {
-        let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
-//        let origin_perm = match initializer_rng.borrow_mut() {
-//            Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
-//            None => perm0.clone(),
-//        };
-//        let reordering = match initializer_rng {
-//            Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
-//            None => perm0.clone()
-//        };
-        let origin_perm1 = &mut initializer_rng
-            .map(|ref mut r| copy_shuffled_permutation(&perm0, r))
-            .unwrap_or(perm0.clone());
-        let reordering1 = &mut initializer_rng
-            .map(|ref mut r| copy_shuffled_permutation(&perm0, r))
-            .unwrap_or(perm0.clone());
-        eprintln!("origin_perm = {:?}", origin_perm1);
-        eprintln!("reordering = {:?}", reordering1);
+#[derive(Debug)]
+struct Match{
+    data: u32,
+    random_seed: Option<u64>,
+}
+
+struct GameState {
+    iteration: u16,
+}
+
+trait Bot { fn do_this(&mut self, state: GameState); }
+
+#[derive(Debug)]
+struct TestBot<R: Rng> {
+    random: Option<R>,
+    some_data: u32,
+}
+
+impl<R: Rng> TestBot<R> {
+    fn new(ss: &str) -> TestBot<R> {
+        TestBot {
+            random: None,
+            some_data: ss.len() as u32
+        }
     }
 }
 
-pub fn create_default_permutation(np: usize) -> Vec<u8> {
+impl<R: Rng + fmt::Debug> Bot for TestBot<R> {
+    fn do_this(&mut self, gs: GameState) {
+        if let Some(ref mut r) = self.random {
+            self.some_data = r.gen();
+        }
+        eprintln!("&self = {:#?}", &self);
+    }
+}
+
+
+fn main() {
+    let random_seed = None;
+    let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
+    let a = TestBot::<IsaacRng>::new("dlu");
+    let b = TestBot::<IsaacRng>::new("llurr");
+    let c = TestBot::<IsaacRng>::new("urd");
+    let d = TestBot::<IsaacRng>::new("rrrdlll");
+    let bots = vec![a, b, c, d];
+    let m1 = create_match(&bots, None);
+    eprintln!("m1 = {:#?}", m1);
+}
+
+fn create_match<'a, B: Bot + 'a>(bots: &Vec<B>, seed: Option<u64>) -> Match {
+    let rng = seed.map(|s| IsaacRng::new_from_u64(s));
+    Match {
+        data: rng.map(|ref mut r| r.gen()).unwrap_or(0),
+        random_seed: seed,
+    }
+}
+
+
+fn create_default_permutation(np: usize) -> Vec<u8> {
     (0..np).map(|x| x as u8).collect()
 }
 
-pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> {
+fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> {
     let mut tmp = xs.clone();
     random.shuffle(tmp.as_mut_slice());
     return tmp;

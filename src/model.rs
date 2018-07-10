@@ -82,7 +82,7 @@ pub struct Match {
     pub duration: u32,
     pub ratio: f32,
     pub game_state: GameState,
-    pub bots: Vec<Box<Bot>>,
+    // pub bots: Vec<Box<Bot>>, // we cannot hold this here because of tournaments
     pub random_seed: Option<u64>,
 }
 
@@ -772,19 +772,18 @@ fn has_inside(field: &Field, p: Point) -> bool {
     0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
 }
 
-pub fn create_match<B: Bot + 'static>(
+pub fn create_match(
     height: usize,
     width: usize,
-    bots: &[B],
+    player_names: Vec<&str>,
     duration: u32,
     ratio: f32,
     random_seed: Option<u64>
 ) -> Match {
+    let np = player_names.len();
     let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
-    let np = bots.len();
     let field = create_default_field(height, width);
     let perm0 = create_default_permutation(np);
-    // permute players if we have random generator
     let origin_perm = match initializer_rng.borrow_mut() {
         Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
         None => perm0.clone(),
@@ -793,9 +792,10 @@ pub fn create_match<B: Bot + 'static>(
         Some(ref mut r) => copy_shuffled_permutation(&perm0, r),
         None => perm0.clone()
     };
+    // permute players if we have random generator
     let origins = create_origins(height, width, &origin_perm);
     let players = origins.iter().map(|&o| Player(vec![o])).collect();
-    let player_names = (0..np).map(|k| format!("player_{}", k)).collect();
+    let player_names = player_names.iter().map(|&s| String::from(s)).collect();
     let mut filled_count = 0;
     let mut scores = vec![0u16; np];
     for i in 0..height {
@@ -819,11 +819,7 @@ pub fn create_match<B: Bot + 'static>(
         scores,
     };
     let game_state = GameState { field, players, player_names, origins, stats, reordering };
-    let mut bots1: Vec<Box<Bot>> = vec![];
-    for k in 0..np {
-        bots1.push(Box::new(bots[k]) as Box<Bot>)
-    }
-    Match { duration, ratio, game_state, bots: bots1, random_seed }
+    Match { duration, ratio, game_state, random_seed }
 }
 
 pub fn run_match<'r>(the_match: &Match, logger: Box<Fn(&GameState)>) {
