@@ -1,6 +1,5 @@
 
 #![crate_type = "lib"]
-#![feature(str_char)]
 
 extern crate core;
 extern crate rand_core;

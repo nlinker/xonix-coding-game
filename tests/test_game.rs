@@ -182,10 +182,8 @@ mod test {
         let b = test_bot("llurr");
         let c = test_bot("urd");
         let d = test_bot("rrrdlll");
-        let mut _slice = [a, b, c, d];
-        // let _bots: Vec<Box<Bot>> = slice.iter().map(|b| Box::new(*b)).collect();
-        // let bots_factory = || vec![a, b, c, d];
-        let the_match = create_match(5, 7, 20, 0.9, Some(42));
+        let slice = [a, b, c, d];
+        let the_match = create_match(5, 7, &slice, 20, 0.9, Some(42));
         let mut gs = game_state(r#"
             *D*.*.*.*.*.*A
             *. . . . . .*.

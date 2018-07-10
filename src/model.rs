@@ -21,6 +21,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 use std::cmp::Ordering;
 use itertools::Itertools;
+use std::borrow::Borrow;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -455,10 +456,10 @@ pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> 
 
 pub fn create_origins_n(height: usize, width: usize, np: usize) -> Vec<Point> {
     let perm = create_default_permutation(np);
-    create_origins(height, width, perm)
+    create_origins(height, width, &perm)
 }
 
-pub fn create_origins(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> {
+pub fn create_origins(height: usize, width: usize, perm: &Vec<u8>) -> Vec<Point> {
     let m = height as i16;
     let n = width as i16;
     let b2p: Box<Fn(usize) -> Point> = Box::new(move |l| border_to_point(height, width, l));
@@ -505,7 +506,9 @@ pub fn create_origins(height: usize, width: usize, perm: Vec<u8>) -> Vec<Point> 
     }
 }
 
-pub fn create_default_field(m: usize, n: usize) -> Field {
+pub fn create_default_field(height: usize, width: usize) -> Field {
+    let m = height;
+    let n = width;
     let mut cells: Vec<Vec<Cell>> = vec![vec![Cell::Empty; n]; m];
     for i in 0..m {
         for j in 0..n {
@@ -768,19 +771,82 @@ fn has_inside(field: &Field, p: Point) -> bool {
     0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
 }
 
-pub fn create_match(
-    m: usize,
-    n: usize,
-    // bots_factory: impl FnOnce() -> &'a Vec<B>,
+pub fn create_match<B: Bot + Clone>(
+    height: usize,
+    width: usize,
+    bots: &[B],
     duration: u32,
     ratio: f32,
     random_seed: Option<u64>
 ) -> Match {
-    let initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
+    let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
+    let bots1 = bots.to_vec();
+    let np = bots.len();
+    let field = create_default_field(height, width);
+    let perm0 = create_default_permutation(np);
+    // permute players if we have random generator
+    let origin_perm = &initializer_rng
+        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
+        .unwrap_or(perm0.clone());
+    let origins = create_origins(height, width, &origin_perm);
+    let players = origins.iter().map(|&o| Player(vec![o]));
+    let mut filled_count = 0;
+    let mut scores = vec![0u16; np];
+    for i in 0..height {
+        for j in 0..width {
+            match field.cells[i][j] {
+                Cell::Empty => {}
+                Cell::Border => { filled_count += 1; }
+                Cell::Owned(k) => {
+                    filled_count += 1;
+                    scores[k as usize] = scores[k as usize] + 1;
+                }
+            }
+        }
+    }
+    let stats = Stats{
+        iteration: 0,
+        filled_count,
+        head_to_head_count: 0,
+        ouroboros_count: 0,
+        bite_count: 0,
+        scores,
+    };
+    let reordering = &initializer_rng
+        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
+        .unwrap_or(perm0);
 
     unimplemented!()
 }
 
-pub fn run_match<'r>(the_match: &Match, logger: Box<Fn(&GameState)>) {
+/*
+    public Match createMatch(
+        int height, int width, Supplier<List<Bot>> botsFactory,
+        long duration, double percent, Optional<Long> randomSeedOpt
+    ) {
+        val filledCount = field.getCells().entrySet().stream()
+            .map(e -> e.getValue().isEmpty()? 0 : 1)
+            .reduce((a, b) -> a + b)
+            .orElse(0);
+        val scores = IntStream.generate(() -> 0)
+            .limit(bots.size()).boxed()
+            .collect(toCollection(ArrayList::new));
+        val stats = new Stats(0, filledCount, 0, 0, 0, scores);
+        val reordering = initializerRng.map(r -> copyShuffledPermutation(perm0, r)).orElse(perm0);
+        val gameState = ModelGameState.of(field, origins, players, stats, reordering);
+        val botsCopy = ImmutableList.copyOf(bots);
+        return Match.builder()
+            .gameState(gameState)
+            .percent(percent)
+            .duration(duration)
+            .bots(botsCopy)
+            .randomSeed(randomSeedOpt)
+            .build();
+    }
+*/
 
+
+
+pub fn run_match<'r>(the_match: &Match, logger: Box<Fn(&GameState)>) {
+    unimplemented!()
 }
