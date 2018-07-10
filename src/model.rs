@@ -116,7 +116,7 @@ impl Player {
 pub trait Bot {
     // the bot is mutable
     fn reset(&mut self, idx: u8, gs: &GameState);
-    fn do_move(&mut self, idx: u8, gs: &GameState) -> Move;
+    fn do_move(&mut self, gs: &GameState) -> Move;
 }
 
 impl fmt::Debug for Bot {
@@ -823,37 +823,8 @@ pub fn create_match<B: Bot + 'static>(
     for k in 0..np {
         bots1.push(Box::new(bots[k]) as Box<Bot>)
     }
-
     Match { duration, ratio, game_state, bots: bots1, random_seed }
 }
-
-/*
-    public Match createMatch(
-        int height, int width, Supplier<List<Bot>> botsFactory,
-        long duration, double percent, Optional<Long> randomSeedOpt
-    ) {
-        val filledCount = field.getCells().entrySet().stream()
-            .map(e -> e.getValue().isEmpty()? 0 : 1)
-            .reduce((a, b) -> a + b)
-            .orElse(0);
-        val scores = IntStream.generate(() -> 0)
-            .limit(bots.size()).boxed()
-            .collect(toCollection(ArrayList::new));
-        val stats = new Stats(0, filledCount, 0, 0, 0, scores);
-        val reordering = initializerRng.map(r -> copyShuffledPermutation(perm0, r)).orElse(perm0);
-        val gameState = ModelGameState.of(field, origins, players, stats, reordering);
-        val botsCopy = ImmutableList.copyOf(bots);
-        return Match.builder()
-            .gameState(gameState)
-            .percent(percent)
-            .duration(duration)
-            .bots(botsCopy)
-            .randomSeed(randomSeedOpt)
-            .build();
-    }
-*/
-
-
 
 pub fn run_match<'r>(the_match: &Match, logger: Box<Fn(&GameState)>) {
     unimplemented!()

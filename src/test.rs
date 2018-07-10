@@ -26,7 +26,7 @@ impl<R: Rng> Bot for TestBot<R> {
         // reset the inner state
     }
 
-    fn do_move(&mut self, _idx: u8, _gs: &GameState) -> Move {
+    fn do_move(&mut self, _gs: &GameState) -> Move {
         if self.iter >= self.path.len() as u32 {
             let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
             match self.random.as_mut() {

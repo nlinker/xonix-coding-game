@@ -222,6 +222,12 @@ mod test {
         let mut gs = gs.clone();
         let mut progressing = true;
         let mut iteration = 0;
+        // reset bot's state
+        for k in 0..bots.len() {
+            let idx = gs.reordering[k];
+            let mv = bots[idx as usize].reset(idx, gs.borrow());
+        }
+        // iterating
         while progressing {
             gs.stats.iteration = iteration;
             iteration += 1;
@@ -229,7 +235,7 @@ mod test {
             for k in 0..bots.len() {
                 let idx = gs.reordering[k];
                 // let cgs = game.make_client_game_state(gs, idx);
-                let mv = bots[idx as usize].do_move(idx, gs.borrow());
+                let mv = bots[idx as usize].do_move(gs.borrow());
                 moves.push(mv);
                 step(gs.borrow_mut(), idx, mv);
             }
