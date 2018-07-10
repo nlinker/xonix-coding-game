@@ -779,15 +779,19 @@ pub fn create_match<B: Bot + Clone>(
     ratio: f32,
     random_seed: Option<u64>
 ) -> Match {
-    let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
+    let initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
     let bots1 = bots.to_vec();
     let np = bots.len();
     let field = create_default_field(height, width);
     let perm0 = create_default_permutation(np);
     // permute players if we have random generator
-    let origin_perm = &initializer_rng
-        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
-        .unwrap_or(perm0.clone());
+//    let origin_perm = &initializer_rng
+//        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
+//        .unwrap_or(perm0.clone());
+    let origin_perm = match initializer_rng {
+        Some(mut r) => copy_shuffled_permutation(&perm0, &mut r),
+        None => perm0.clone(),
+    };
     let origins = create_origins(height, width, &origin_perm);
     let players = origins.iter().map(|&o| Player(vec![o]));
     let mut filled_count = 0;
@@ -812,9 +816,9 @@ pub fn create_match<B: Bot + Clone>(
         bite_count: 0,
         scores,
     };
-    let reordering = &initializer_rng
-        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
-        .unwrap_or(perm0);
+//    let reordering = &initializer_rng
+//        .map(|mut r| copy_shuffled_permutation(&perm0, &mut r))
+//        .unwrap_or(perm0);
 
     unimplemented!()
 }
