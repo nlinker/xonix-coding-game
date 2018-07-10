@@ -115,7 +115,7 @@ impl Player {
 
 pub trait Bot {
     // the bot is mutable
-    fn reset(&mut self, idx: u8, gs: &GameState);
+    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
     fn do_move(&mut self, gs: &GameState) -> Move;
 }
 
@@ -822,6 +822,75 @@ pub fn create_match(
     Match { duration, ratio, game_state, random_seed }
 }
 
-pub fn run_match<'r>(the_match: &Match, logger: Box<Fn(&GameState)>) {
-    unimplemented!()
+pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&GameState)>) {
+    let nb = bots.len();
+    let all_moves: Vec<Vec<Move>> = Vec::with_capacity(the_match.duration as usize);
+
+    /*
+        ModelGameState gs = match.getGameState();
+        val bots = match.getBots();
+        val nb = bots.size();
+        val botNames = new ArrayList<String>(nb);
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        for (Bot bot : bots) {
+            builder.add(bot.getName());
+            botNames.add(bot.getName());
+        }
+        val replayBotNames = builder.build();
+        val stats = gs.getStats();
+
+        for (int tick = 0; tick < match.getDuration(); tick++) {
+            // if the cells has filled enough, do finish
+            if (getFillPercentage(gs) >= match.getPercent()) {
+                break;
+            }
+            // now do loop for bots
+            // tick + 1 because we want last iteration == allMoves.size
+            stats.setIteration(tick + 1);
+            val moves = new ArrayList<Move>(nb);
+            for (int k = 0; k < nb; k++) {
+                moves.add(Move.STOP);
+            }
+            // enumerate all the bots, move them
+            for (int k = 0; k < nb; k++) {
+                int idx = gs.getReordering().get(k);
+                GameState gsView = getClientGameState(gs, idx);
+                val bot = bots.get(idx);
+                val move = safeMove(gsView, bot);
+                if (move.isPresent()) {
+                    gs = step(gs, idx, move.get());
+                    moves.set(idx, move.get());
+                    botNames.set(idx, bot.getName());
+                } else {
+                    log.debug("Bot " + idx + " failed on step " + tick);
+                    moves.add(Move.STOP);
+                }
+            }
+            logger.accept(gs, botNames);
+            // enumerated all bots, gathered
+            allMoves.add(moves);
+        }
+        val immStats = ImmutableStats.builder()
+            .iteration(stats.iteration)
+            .filledCount(stats.filledCount)
+            .headToHeadCount(stats.headToHeadCount)
+            .selfBiteCount(stats.selfBiteCount)
+            .biteCount(stats.biteCount)
+            .scores(ImmutableList.copyOf(stats.scores))
+            .build();
+        // return stub for now
+        return new Replay(
+            gs.getField().getHeight(),
+            gs.getField().getWidth(),
+            match.getPercent(),
+            match.getDuration(),
+            replayBotNames,
+            allMoves,
+            immStats,
+            match.getRandomSeed()
+        );
+
+
+
+    */
 }

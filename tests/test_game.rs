@@ -1,19 +1,24 @@
 extern crate core;
 extern crate rand;
+extern crate itertools;
 extern crate xcg;
+
+use xcg::utils::Trim;
+use xcg::model::*;
+use xcg::test::TestBot;
+
+use rand::prelude::{Rng, RngCore, SeedableRng, SmallRng, FromEntropy, ThreadRng};
+use rand::prng::XorShiftRng;
+use rand::IsaacRng;
+
+use core::fmt::Debug;
+use std::collections::HashSet;
+use core::iter::FromIterator;
+use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 
 #[cfg(test)]
 mod test {
-
-    use xcg::utils::Trim;
-    use xcg::model::*;
-    use xcg::test::TestBot;
-    use rand::IsaacRng;
-    use core::fmt::Debug;
-    use std::collections::HashSet;
-    use core::iter::FromIterator;
-    use std::borrow::Borrow;
-    use std::borrow::BorrowMut;
 
     #[test]
     fn test_indent_ops() {
@@ -183,7 +188,8 @@ mod test {
         let c = test_bot("urd");
         let d = test_bot("rrrdlll");
         let slice = [a, b, c, d];
-        let the_match = create_match(5, 7, &slice, 20, 0.9, Some(42));
+        let names = slice.iter().map(|bot| bot.name()).collect_vec();
+        let the_match = create_match(5, 7, &names, 20, 0.9, Some(42));
         let mut gs = game_state(r#"
             *D*.*.*.*.*.*A
             *. . . . . .*.
@@ -216,6 +222,10 @@ mod test {
 
     fn test_bot(path: &str) -> TestBot<IsaacRng> {
         TestBot::new(path)
+    }
+
+    fn test_bot_2<R: Rng>(path: &str, idx: u8, rng: &mut R) -> TestBot<IsaacRng> {
+        TestBot::new_2(path, idx, rng)
     }
 
     fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
