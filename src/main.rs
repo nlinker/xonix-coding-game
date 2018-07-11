@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 extern crate rand;
 extern crate byteorder;
@@ -6,18 +6,10 @@ extern crate xcg;
 extern crate regex;
 extern crate itertools;
 
-use byteorder::{ByteOrder, LittleEndian};
-use rand::prelude::{Rng, RngCore, SeedableRng, SmallRng, FromEntropy, ThreadRng};
-use rand::prng::XorShiftRng;
 use rand::IsaacRng;
-use regex::Regex;
-use std::mem::transmute_copy;
 use std::fmt;
-use itertools::Itertools;
-use std::borrow::Borrow;
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
-use std::rc::Rc;
+use rand::prelude::Rng;
 
 #[derive(Debug)]
 struct GameState {
@@ -53,8 +45,26 @@ impl<'a, R: Rng> TestBot<'a, R> {
 }
 
 impl<'a, R: Rng + fmt::Debug> Bot for TestBot<'a, R> {
-    fn do_move(&mut self, gs: &GameState) -> Move {
-        Move::Stop
+    fn do_move(&mut self, _gs: &GameState) -> Move {
+        if self.iter >= self.path.len() as u32 {
+            let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
+            match self.random {
+                None => Move::Stop,
+                Some(r) => moves[r.borrow_mut().gen_range(0, moves.len())],
+            }
+        } else {
+            let ch = self.path[self.iter as usize] as char;
+            let m = match ch {
+                'u' | 'U' => Move::Up,
+                'd' | 'D' => Move::Down,
+                'l' | 'L' => Move::Left,
+                'r' | 'R' => Move::Right,
+                's' | 'S' => Move::Stop,
+                _ => panic!(format!("Invalid symbol: {}", ch))
+            };
+            self.iter += 1;
+            m
+        }
     }
 }
 
@@ -62,25 +72,34 @@ fn main() {
     // shared across all the bots
     let teh_rng = RefCell::new(IsaacRng::new_from_u64(666));
 
-    let a = TestBot::<IsaacRng>::new("ddd", &teh_rng);
-    let b = TestBot::<IsaacRng>::new("uuu", &teh_rng);
-    let c = TestBot::<IsaacRng>::new("ddd", &teh_rng);
-    let d = TestBot::<IsaacRng>::new("uuu", &teh_rng);
+    let a = TestBot::<IsaacRng>::new("d", &teh_rng);
+    let b = TestBot::<IsaacRng>::new("u", &teh_rng);
+    let c = TestBot::<IsaacRng>::new("d", &teh_rng);
+    let d = TestBot::<IsaacRng>::new("u", &teh_rng);
     let mut bots = [a, b, c, d];
-    let gs = GameState { iteration: 0, data1: 10, data2: 20, data3: 30 };
+    let mut gs = GameState { iteration: 0, data1: 10, data2: 20, data3: 30 };
 
     println!("round 1");
-    for k in 0..bots.len() {
-        let m = bots[k].do_move(&gs);
-        eprintln!("moves: {:?} {:?}", k, m);
-    }
+    round(&mut bots, &mut gs);
     println!("round 2");
+    round(&mut bots, &mut gs);
+    println!("round 3");
+    round(&mut bots, &mut gs);
+}
+
+fn round<B: Bot>(bots: &mut [B], gs: &mut GameState) {
     for k in 0..bots.len() {
         let m = bots[k].do_move(&gs);
-        eprintln!("moves: {:?} {:?}", k, m);
+        println!("move: {:?} {:?}", k, m);
+        step(gs, k as u8, m);
     }
 }
 
+fn step(gs: &mut GameState, _idx: u8, _mv: Move) {
+    gs.data1 += 1;
+    gs.data2 += 2;
+    gs.data3 += 3;
+}
 
 
 //fn main() {
