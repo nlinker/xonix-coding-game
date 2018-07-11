@@ -181,10 +181,12 @@ mod test {
 
     #[test]
     fn test_run_match_with_reordering() {
-        let a = test_bot("dlu");
-        let b = test_bot("llurr");
-        let c = test_bot("urd");
-        let d = test_bot("rrrdlll");
+        let teh_rng = IsaacRng::new_from_u64(42);
+
+        let a = test_bot_r("dlu", 0, &teh_rng);
+        let b = test_bot_r("llurr", 0, &teh_rng);
+        let c = test_bot_r("urd", 0, &teh_rng);
+        let d = test_bot_r("rrrdlll", 0, &teh_rng);
         let mut bots = [a, b, c, d];
         let names: Vec<String> = bots.iter().map(|bot| bot.name()).collect();
 
@@ -223,8 +225,8 @@ mod test {
         TestBot::new(path)
     }
 
-    fn test_bot_2<R: Rng>(path: &str, idx: u8, rng: &R) -> TestBot<R> {
-        TestBot::new_2(path, idx, rng)
+    fn test_bot_r<R: Rng>(path: &str, idx: u8, rng: &R) -> TestBot<R> {
+        TestBot::with_random(path, idx, rng)
     }
 
     fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
@@ -234,7 +236,7 @@ mod test {
         // reset bot's state
         for k in 0..bots.len() {
             let idx = gs.reordering[k];
-            let mv = bots[idx as usize].reset(gs.borrow(), idx, 42u64);
+            bots[idx as usize].reset(gs.borrow(), idx, 42u64);
         }
         // iterating
         while progressing {

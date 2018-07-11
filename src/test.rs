@@ -21,7 +21,7 @@ impl<R: Rng> TestBot<R> {
         let path = s.as_bytes().to_vec();
         TestBot { path, iter: 0, idx: None, rng: None }
     }
-    pub fn new_2(s: &str, idx: u8, rng: &R) -> TestBot<R> {
+    pub fn with_random(s: &str, idx: u8, rng: &R) -> TestBot<R> {
         let path = s.as_bytes().to_vec();
         TestBot { path, iter: 0, idx: Some(idx), rng: None
             // TODO rng: Some(rng)
