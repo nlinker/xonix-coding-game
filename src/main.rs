@@ -10,6 +10,7 @@ use rand::IsaacRng;
 use std::fmt;
 use std::cell::RefCell;
 use rand::prelude::Rng;
+use std::rc::Rc;
 
 #[derive(Debug)]
 struct GameState {
@@ -29,14 +30,14 @@ trait Bot {
 }
 
 #[derive(Debug)]
-struct TestBot<'a, R: Rng + 'a> {
+struct TestBot<R: Rng> {
     path: Vec<u8>,
     iter: u32,
-    random: Option<&'a RefCell<R>>,
+    random: Option<Rc<RefCell<R>>>,
 }
 
-impl<'a, R: Rng> TestBot<'a, R> {
-    fn new(s: &str, rng: &'a RefCell<R>) -> TestBot<'a, R> {
+impl<R: Rng> TestBot<R> {
+    fn new(s: &str, rng: Rc<RefCell<R>>) -> TestBot<R> {
         let path = s.as_bytes().to_vec();
         let random = Some(rng);
         let iter = 0;
@@ -44,13 +45,13 @@ impl<'a, R: Rng> TestBot<'a, R> {
     }
 }
 
-impl<'a, R: Rng + fmt::Debug> Bot for TestBot<'a, R> {
+impl<R: Rng + fmt::Debug> Bot for TestBot<R> {
     fn do_move(&mut self, _gs: &GameState) -> Move {
         if self.iter >= self.path.len() as u32 {
             let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
             match self.random {
                 None => Move::Stop,
-                Some(r) => moves[r.borrow_mut().gen_range(0, moves.len())],
+                Some(ref mut r) => moves[r.borrow_mut().gen_range(0, moves.len())],
             }
         } else {
             let ch = self.path[self.iter as usize] as char;
@@ -70,12 +71,12 @@ impl<'a, R: Rng + fmt::Debug> Bot for TestBot<'a, R> {
 
 fn main() {
     // shared across all the bots
-    let teh_rng = RefCell::new(IsaacRng::new_from_u64(666));
+    let teh_rng = Rc::new(RefCell::new(IsaacRng::new_from_u64(666)));
 
-    let a = TestBot::<IsaacRng>::new("d", &teh_rng);
-    let b = TestBot::<IsaacRng>::new("u", &teh_rng);
-    let c = TestBot::<IsaacRng>::new("d", &teh_rng);
-    let d = TestBot::<IsaacRng>::new("u", &teh_rng);
+    let a = TestBot::new("d", teh_rng.clone());
+    let b = TestBot::new("u", teh_rng.clone());
+    let c = TestBot::new("d", teh_rng.clone());
+    let d = TestBot::new("u", teh_rng.clone());
     let mut bots = [a, b, c, d];
     let mut gs = GameState { iteration: 0, data1: 10, data2: 20, data3: 30 };
 
