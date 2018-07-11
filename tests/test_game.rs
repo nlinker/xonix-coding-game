@@ -3,22 +3,20 @@ extern crate rand;
 extern crate itertools;
 extern crate xcg;
 
-use xcg::utils::Trim;
-use xcg::model::*;
-use xcg::test::TestBot;
-
-use rand::prelude::{Rng, RngCore, SeedableRng, SmallRng, FromEntropy, ThreadRng};
-use rand::prng::XorShiftRng;
-use rand::IsaacRng;
-
-use core::fmt::Debug;
-use std::collections::HashSet;
-use core::iter::FromIterator;
-use std::borrow::Borrow;
-use std::borrow::BorrowMut;
-
 #[cfg(test)]
 mod test {
+    use xcg::utils::Trim;
+    use xcg::model::*;
+    use xcg::test::TestBot;
+
+    use rand::prelude::Rng;
+    use rand::IsaacRng;
+
+    use core::fmt::Debug;
+    use std::collections::HashSet;
+    use core::iter::FromIterator;
+    use std::borrow::Borrow;
+    use std::borrow::BorrowMut;
 
     #[test]
     fn test_indent_ops() {
@@ -187,9 +185,10 @@ mod test {
         let b = test_bot("llurr");
         let c = test_bot("urd");
         let d = test_bot("rrrdlll");
-        let slice = [a, b, c, d];
-        let names = slice.iter().map(|bot| bot.name()).collect_vec();
-        let the_match = create_match(5, 7, &names, 20, 0.9, Some(42));
+        let mut bots = [a, b, c, d];
+        let names: Vec<String> = bots.iter().map(|bot| bot.name()).collect();
+
+        let mut the_match = create_match(5, 7, &names, 20, 0.9, Some(42));
         let mut gs = game_state(r#"
             *D*.*.*.*.*.*A
             *. . . . . .*.
@@ -202,7 +201,7 @@ mod test {
         assert_eq!(gs, the_match.game_state);
 
         let logger: Box<Fn(&GameState)> = Box::new(|_game_state| {});
-        run_match(&the_match, logger);
+        run_match(&mut the_match, &mut bots, logger);
         let mut final_gs = game_state(r#"
             "*.*.*.*.*.*A*.\n" +
             "*D3.3.3. .0.*.\n" +
@@ -224,7 +223,7 @@ mod test {
         TestBot::new(path)
     }
 
-    fn test_bot_2<R: Rng>(path: &str, idx: u8, rng: &mut R) -> TestBot<IsaacRng> {
+    fn test_bot_2<R: Rng>(path: &str, idx: u8, rng: &R) -> TestBot<R> {
         TestBot::new_2(path, idx, rng)
     }
 
@@ -235,7 +234,7 @@ mod test {
         // reset bot's state
         for k in 0..bots.len() {
             let idx = gs.reordering[k];
-            let mv = bots[idx as usize].reset(idx, gs.borrow());
+            let mv = bots[idx as usize].reset(gs.borrow(), idx, 42u64);
         }
         // iterating
         while progressing {

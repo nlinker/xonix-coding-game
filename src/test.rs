@@ -5,6 +5,7 @@ use model::Bot;
 use model::GameState;
 use model::Move;
 use std::str::from_utf8;
+use std::cell::RefCell;
 
 // TODO move it to ../tests/test_bot.rs
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -12,7 +13,7 @@ pub struct TestBot<R: Rng> {
     path: Vec<u8>,
     iter: u32,
     idx: Option<u8>,
-    rng: Option<R>,
+    rng: Option<RefCell<R>>,
 }
 
 impl<R: Rng> TestBot<R> {
@@ -20,9 +21,11 @@ impl<R: Rng> TestBot<R> {
         let path = s.as_bytes().to_vec();
         TestBot { path, iter: 0, idx: None, rng: None }
     }
-    pub fn new_2(s: &str, idx: u8, rng: R) -> TestBot<R> {
+    pub fn new_2(s: &str, idx: u8, rng: &R) -> TestBot<R> {
         let path = s.as_bytes().to_vec();
-        TestBot { path, iter: 0, idx: Some(idx), rng: Some(rng) }
+        TestBot { path, iter: 0, idx: Some(idx), rng: None
+            // TODO rng: Some(rng)
+        }
     }
     pub fn name(&self) -> String {
         self.idx.map(|id| {
@@ -43,7 +46,7 @@ impl<R: Rng> Bot for TestBot<R> {
             let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
             match self.rng.as_mut() {
                 None => Move::Stop,
-                Some(r) => moves[r.gen_range(0, moves.len())],
+                Some(r) => moves[r.borrow_mut().gen_range(0, moves.len())],
             }
         } else {
             let ch = self.path[self.iter as usize] as char;

@@ -772,12 +772,8 @@ fn has_inside(field: &Field, p: Point) -> bool {
     0 <= i && i < (field.m as i16) && 0 <= j && j < (field.n as i16)
 }
 
-pub fn create_match(
-    height: usize,
-    width: usize,
-    player_names: Vec<&str>,
-    duration: u32,
-    ratio: f32,
+pub fn create_match<T: AsRef<str>>(
+    height: usize, width: usize, player_names: &[T], duration: u32, ratio: f32,
     random_seed: Option<u64>
 ) -> Match {
     let np = player_names.len();
@@ -795,7 +791,7 @@ pub fn create_match(
     // permute players if we have random generator
     let origins = create_origins(height, width, &origin_perm);
     let players = origins.iter().map(|&o| Player(vec![o])).collect();
-    let player_names = player_names.iter().map(|&s| String::from(s)).collect();
+    let player_names = player_names.iter().map(|s| s.as_ref().to_owned()).collect();
     let mut filled_count = 0;
     let mut scores = vec![0u16; np];
     for i in 0..height {
