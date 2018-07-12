@@ -9,7 +9,7 @@ mod test {
     use xcg::model::*;
     use xcg::test::TestBot;
 
-    use rand::prelude::Rng;
+    use rand::prelude::{Rng, RngCore};
     use rand::IsaacRng;
 
     use core::fmt::Debug;
@@ -183,17 +183,17 @@ mod test {
 
     #[test]
     fn test_run_match_with_reordering() {
-        let teh_match_seed = Some(69);
-        let teh_rng = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+        let match_seed = Some(69);
+        let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
 
-        let a = test_bot_r(0, teh_rng.clone(), "dlu");
-        let b = test_bot_r(1, teh_rng.clone(), "llurr");
-        let c = test_bot_r(2, teh_rng.clone(), "urd");
-        let d = test_bot_r(3, teh_rng.clone(), "rrrdlll");
+        let a = test_bot_r(0, random.clone(), "dlu");
+        let b = test_bot_r(1, random.clone(), "llurr");
+        let c = test_bot_r(2, random.clone(), "urd");
+        let d = test_bot_r(3, random.clone(), "rrrdlll");
         let mut bots = [a, b, c, d];
-        let names: Vec<String> = bots.iter().map(|bot| bot.name()).collect();
+        let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
 
-        let mut the_match = create_match(5, 7, &names, 20, 0.9, teh_match_seed);
+        let mut the_match = create_match(5, 7, &names, 20, 0.9, match_seed);
         let gs = game_state(r#"
             *C*.*.*.*.*.*B
             *. . . . . .*.
@@ -203,12 +203,11 @@ mod test {
             reordering=[3,0,2,1]
             origins=[(4,6),(0,6),(0,0),(4,0)]
         "#);
-        debug_assert_eq!(the_match.game_state.to_string(), gs.to_string());
         debug_assert_eq!(the_match.game_state, gs);
-        let logger: Box<Fn(&GameState)> = Box::new(|_gs| {
+        let logger = |_gs: &GameState| {
             // println!("{}", gs)
-        });
-        run_match(&mut the_match, &mut bots, logger);
+        };
+        run_match(&mut the_match, &mut bots, &logger);
         let final_gs = game_state(r#"
             *.*.*.*.*.*.*.
             *.2C2D3. .1.*B
@@ -219,12 +218,29 @@ mod test {
             stats=Stats(20,27,2,0,0,[1,1,2,3])
             origins=[(4,6),(0,6),(0,0),(4,0)]
         "#);
-        assert_eq!(the_match.game_state.to_string(), final_gs.to_string());
-        assert_eq!(the_match.game_state, final_gs);
+        debug_assert_eq!(the_match.game_state, final_gs);
     }
 
     #[test]
     fn test_run_replay() {
+        let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+        let a = test_bot_r(0, random.clone(), "dllll");
+        let b = test_bot_r(1, random.clone(), "luuuu");
+        let c = test_bot_r(2, random.clone(), "urrrr");
+        let d = test_bot_r(3, random.clone(), "rdddd");
+        let mut bots = [a, b, c, d];
+        let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
+        let logger = |_gs: &GameState| {};
+        for _ in 0..100 {
+            // run match
+            let match_k_seed = (*random).borrow_mut().next_u64();
+            let mut match_k = create_match(11, 11, &names, 32, 0.9, Some(match_k_seed));
+            let replay_k = run_match(&mut match_k, &mut bots, &logger);
+            let gs1 = run_replay(&replay_k, &logger);
+            let gs2 = run_replay(&replay_k, &logger);
+            debug_assert_eq!(match_k.game_state, gs1);
+            debug_assert_eq!(match_k.game_state, gs2);
+        }
 
     }
 

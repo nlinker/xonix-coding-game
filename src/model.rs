@@ -840,7 +840,7 @@ pub fn create_match<T: AsRef<str>>(
     Match { duration, ratio, game_state, random_seed }
 }
 
-pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&GameState)>) -> Replay {
+pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: &Fn(&GameState)) -> Replay {
     let nb = bots.len();
     debug_assert_eq!(nb, the_match.game_state.reordering.len());
     debug_assert_eq!(nb, the_match.game_state.players.len());
@@ -890,4 +890,11 @@ pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&
         moves: all_moves,
         random_seed: the_match.random_seed
     }
+}
+
+/// returns the final game state after the replay run
+pub fn run_replay(replay: &Replay, logger: &Fn(&GameState)) -> GameState {
+
+
+    unimplemented!()
 }
