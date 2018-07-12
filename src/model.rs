@@ -11,7 +11,7 @@ use std::error::Error;
 use core::str;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use rand::prelude::{Rng, RngCore};
+use rand::prelude::{Rng, RngCore, FromEntropy};
 use rand::isaac::IsaacRng;
 use regex::{Regex, Match as RegexMatch};
 use itertools::free::join;
@@ -852,11 +852,14 @@ pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&
         let fc = mat.game_state.stats.filled_count as f32;
         fc / (m * n)
     }
-    let mut rng = IsaacRng::new_from_u64(12345);
-    let mut random_gen = move || rng.next_u64(); // random = Rc::new(RefCell::new(IsaacRng::new_from_u64(the_match)));
+    // random generator will supply seeds for bots
+    let mut rng = the_match.random_seed
+        .map(|seed| IsaacRng::new_from_u64(seed))
+        .unwrap_or_else(|| IsaacRng::from_entropy());
+    let mut random_seed_gen = move || rng.next_u64();
     for k in 0..nb {
         let idx = the_match.game_state.reordering[k] as usize;
-        let seed: u64 = random_gen();
+        let seed: u64 = random_seed_gen();
         bots[idx].reset(&the_match.game_state, idx as u8, seed);
     }
     for tick in 0..the_match.duration {
@@ -873,10 +876,8 @@ pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&
             let idx = the_match.game_state.reordering[k] as usize;
             // let cgs = make_client_game_state(the_match.game_state, idx)
             let m = bots[idx].do_move(&the_match.game_state);
+            step(&mut the_match.game_state, idx as u8, m);
             moves[idx] = m;
-//            fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
-//            fn do_move(&mut self, gs: &GameState) -> Move;
-
         }
         logger(&the_match.game_state);
         all_moves.push(moves);
