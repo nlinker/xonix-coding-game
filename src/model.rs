@@ -23,6 +23,7 @@ use std::cmp::Ordering;
 use itertools::Itertools;
 use std::borrow::Borrow;
 use std::borrow::BorrowMut;
+use std::cell::RefCell;
 
 /// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -55,13 +56,16 @@ pub struct Field {
 /// Stats is updated on each step according to the things happened
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Stats {
-    pub iteration: u16,
+    pub iteration: u32,
     pub filled_count: u16,
     pub head_to_head_count: u16,
     pub ouroboros_count: u16,
     pub bite_count: u16,
     pub scores: Vec<u16>,
 }
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct Player(pub Vec<Point>);
 
 /// _player_names_ is player names
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -74,23 +78,29 @@ pub struct GameState {
     pub reordering: Vec<u8>,
 }
 
-//#[derive(Clone, Eq, PartialEq, Debug)]
-//pub struct ClientGameState { pub field: Field }
-//
-//#[derive(Clone, Eq, PartialEq, Debug)]
-//pub struct ClientGameStateDelta {}
-
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Player(pub Vec<Point>);
-
 #[derive(Debug)]
 pub struct Match {
     pub duration: u32,
     pub ratio: f32,
     pub game_state: GameState,
-    // pub bots: Vec<Box<Bot>>, // we cannot hold this here because of tournaments
     pub random_seed: Option<u64>,
 }
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Replay {
+    pub height: usize,
+    pub width: usize,
+    pub duration: u32,
+    pub ratio: f32,
+    pub moves: Vec<Vec<Move>>,
+    pub random_seed: Option<u64>,
+}
+
+//#[derive(Clone, Eq, PartialEq, Debug)]
+//pub struct ClientGameState { pub field: Field }
+//
+//#[derive(Clone, Eq, PartialEq, Debug)]
+//pub struct ClientGameStateDelta {}
 
 #[derive(Clone, Debug)]
 pub struct ParseError;
@@ -318,7 +328,7 @@ impl GameState {
                     let caps2 = Regex::new("(\\d+),(\\d+),(\\d+),(\\d+),(\\d+),\\[(.*?)]").unwrap().captures(caps1);
                     if caps2.is_some() {
                         let c2 = caps2.unwrap();
-                        let a1 = c2.get(1).unwrap().as_str().parse::<u16>().unwrap();
+                        let a1 = c2.get(1).unwrap().as_str().parse::<u32>().unwrap();
                         let a2 = c2.get(2).unwrap().as_str().parse::<u16>().unwrap();
                         let a3 = c2.get(3).unwrap().as_str().parse::<u16>().unwrap();
                         let a4 = c2.get(4).unwrap().as_str().parse::<u16>().unwrap();
@@ -830,75 +840,53 @@ pub fn create_match<T: AsRef<str>>(
     Match { duration, ratio, game_state, random_seed }
 }
 
-pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&GameState)>) {
+pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: Box<Fn(&GameState)>) -> Replay {
     let nb = bots.len();
-    let all_moves: Vec<Vec<Move>> = Vec::with_capacity(the_match.duration as usize);
-
-    /*
-        ModelGameState gs = match.getGameState();
-        val bots = match.getBots();
-        val nb = bots.size();
-        val botNames = new ArrayList<String>(nb);
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
-        for (Bot bot : bots) {
-            builder.add(bot.getName());
-            botNames.add(bot.getName());
+    debug_assert_eq!(nb, the_match.game_state.reordering.len());
+    debug_assert_eq!(nb, the_match.game_state.players.len());
+    debug_assert_eq!(nb, the_match.game_state.player_names.len());
+    let mut all_moves: Vec<Vec<Move>> = Vec::with_capacity(the_match.duration as usize);
+    fn get_ratio(mat: &Match) -> f32 {
+        let m = mat.game_state.field.m as f32;
+        let n = mat.game_state.field.n as f32;
+        let fc = mat.game_state.stats.filled_count as f32;
+        fc / (m * n)
+    }
+    let mut rng = IsaacRng::new_from_u64(12345);
+    let mut random_gen = move || rng.next_u64(); // random = Rc::new(RefCell::new(IsaacRng::new_from_u64(the_match)));
+    for k in 0..nb {
+        let idx = the_match.game_state.reordering[k] as usize;
+        let seed: u64 = random_gen();
+        bots[idx].reset(&the_match.game_state, idx as u8, seed);
+    }
+    for tick in 0..the_match.duration {
+        // if the cells has filled enough, do finish
+        if get_ratio(the_match) >= the_match.ratio {
+            break;
         }
-        val replayBotNames = builder.build();
-        val stats = gs.getStats();
+        // now do loop for bots
+        // tick + 1 because we want last iteration == allMoves.size
+        the_match.game_state.stats.iteration = tick + 1;
+        let mut moves = vec![Move::Stop; nb];
+        // enumerate all the bots, move them
+        for k in 0..nb {
+            let idx = the_match.game_state.reordering[k] as usize;
+            // let cgs = make_client_game_state(the_match.game_state, idx)
+            let m = bots[idx].do_move(&the_match.game_state);
+            moves[idx] = m;
+//            fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
+//            fn do_move(&mut self, gs: &GameState) -> Move;
 
-        for (int tick = 0; tick < match.getDuration(); tick++) {
-            // if the cells has filled enough, do finish
-            if (getFillPercentage(gs) >= match.getPercent()) {
-                break;
-            }
-            // now do loop for bots
-            // tick + 1 because we want last iteration == allMoves.size
-            stats.setIteration(tick + 1);
-            val moves = new ArrayList<Move>(nb);
-            for (int k = 0; k < nb; k++) {
-                moves.add(Move.STOP);
-            }
-            // enumerate all the bots, move them
-            for (int k = 0; k < nb; k++) {
-                int idx = gs.getReordering().get(k);
-                GameState gsView = getClientGameState(gs, idx);
-                val bot = bots.get(idx);
-                val move = safeMove(gsView, bot);
-                if (move.isPresent()) {
-                    gs = step(gs, idx, move.get());
-                    moves.set(idx, move.get());
-                    botNames.set(idx, bot.getName());
-                } else {
-                    log.debug("Bot " + idx + " failed on step " + tick);
-                    moves.add(Move.STOP);
-                }
-            }
-            logger.accept(gs, botNames);
-            // enumerated all bots, gathered
-            allMoves.add(moves);
         }
-        val immStats = ImmutableStats.builder()
-            .iteration(stats.iteration)
-            .filledCount(stats.filledCount)
-            .headToHeadCount(stats.headToHeadCount)
-            .selfBiteCount(stats.selfBiteCount)
-            .biteCount(stats.biteCount)
-            .scores(ImmutableList.copyOf(stats.scores))
-            .build();
-        // return stub for now
-        return new Replay(
-            gs.getField().getHeight(),
-            gs.getField().getWidth(),
-            match.getPercent(),
-            match.getDuration(),
-            replayBotNames,
-            allMoves,
-            immStats,
-            match.getRandomSeed()
-        );
-
-
-
-    */
+        logger(&the_match.game_state);
+        all_moves.push(moves);
+    }
+    Replay {
+        height: the_match.game_state.field.m,
+        width: the_match.game_state.field.n,
+        duration: the_match.duration,
+        ratio: the_match.ratio,
+        moves: all_moves,
+        random_seed: the_match.random_seed
+    }
 }

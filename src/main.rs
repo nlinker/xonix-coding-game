@@ -1,4 +1,4 @@
-// #![allow(unused)]
+#![allow(unused)]
 
 extern crate rand;
 extern crate byteorder;
@@ -11,108 +11,55 @@ use std::fmt;
 use std::cell::RefCell;
 use rand::prelude::Rng;
 use std::rc::Rc;
-
-#[derive(Debug)]
-struct GameState {
-    iteration: u16,
-    data1: u32,
-    data2: u32,
-    data3: u32,
-}
-
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub enum Move {
-    Right, Up, Left, Down, Stop,
-}
-
-trait Bot {
-    fn do_move(&mut self, gs: &GameState) -> Move;
-}
-
-#[derive(Debug)]
-struct TestBot<R: Rng> {
-    path: Vec<u8>,
-    iter: u32,
-    random: Option<Rc<RefCell<R>>>,
-}
-
-impl<R: Rng> TestBot<R> {
-    fn new(s: &str, rng: Rc<RefCell<R>>) -> TestBot<R> {
-        let path = s.as_bytes().to_vec();
-        let random = Some(rng);
-        let iter = 0;
-        TestBot { path, iter, random }
-    }
-}
-
-impl<R: Rng + fmt::Debug> Bot for TestBot<R> {
-    fn do_move(&mut self, _gs: &GameState) -> Move {
-        if self.iter >= self.path.len() as u32 {
-            let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
-            match self.random {
-                None => Move::Stop,
-                Some(ref mut r) => moves[r.borrow_mut().gen_range(0, moves.len())],
-            }
-        } else {
-            let ch = self.path[self.iter as usize] as char;
-            let m = match ch {
-                'u' | 'U' => Move::Up,
-                'd' | 'D' => Move::Down,
-                'l' | 'L' => Move::Left,
-                'r' | 'R' => Move::Right,
-                's' | 'S' => Move::Stop,
-                _ => panic!(format!("Invalid symbol: {}", ch))
-            };
-            self.iter += 1;
-            m
-        }
-    }
-}
+use xcg::model::*;
+use xcg::test::TestBot;
+use xcg::utils::Trim;
 
 fn main() {
-    // shared across all the bots
     let teh_rng = Rc::new(RefCell::new(IsaacRng::new_from_u64(666)));
 
-    let a = TestBot::new("d", teh_rng.clone());
-    let b = TestBot::new("u", teh_rng.clone());
-    let c = TestBot::new("d", teh_rng.clone());
-    let d = TestBot::new("u", teh_rng.clone());
+    let a = test_bot_r(0, teh_rng.clone(), "dlu");
+    let b = test_bot_r(1, teh_rng.clone(), "llurr");
+    let c = test_bot_r(2, teh_rng.clone(), "urd");
+    let d = test_bot_r(3, teh_rng.clone(), "rrrdlll");
     let mut bots = [a, b, c, d];
-    let mut gs = GameState { iteration: 0, data1: 10, data2: 20, data3: 30 };
+    let names: Vec<String> = bots.iter().map(|bot| bot.name()).collect();
 
-    println!("round 1");
-    round(&mut bots, &mut gs);
-    println!("round 2");
-    round(&mut bots, &mut gs);
-    println!("round 3");
-    round(&mut bots, &mut gs);
+    let mut the_match = create_match(5, 7, &names, 20, 0.9, Some(69));
+    let gs = game_state(r#"
+            *C*.*.*.*.*.*B
+            *. . . . . .*.
+            *. . . . . .*.
+            *. . . . . .*.
+            *D*.*.*.*.*.*A
+            reordering=[3,0,2,1]
+            origins=[(4,6),(0,6),(0,0),(4,0)]
+        "#);
+    eprintln!("gs = \n{}", the_match.game_state);
+    assert_eq!(gs, the_match.game_state);
+
+    let logger: Box<Fn(&GameState)> = Box::new(|gs| {
+        println!("{}", gs)
+    });
+    run_match(&mut the_match, &mut bots, logger);
+    let mut final_gs = game_state(r#"
+            *.*.*.*.*.*A*.
+            *D3.3.3. .0.*.
+            *. . . . . .*.
+            *.2. . .1.1.*B
+            *.*C*.*.*.*.*.
+            reordering=[3,0,2,1]
+            origins=[(4,6),(0,6),(0,0),(4,0)]
+            stats=Stats(20,27,0,0,0,[1,2,1,3])
+        "#);
+    assert_eq!(the_match.game_state.to_string(), final_gs.to_string());
+    assert_eq!(the_match.game_state, final_gs);
 }
 
-fn round<B: Bot>(bots: &mut [B], gs: &mut GameState) {
-    for k in 0..bots.len() {
-        let m = bots[k].do_move(&gs);
-        println!("move: {:?} {:?}", k, m);
-        step(gs, k as u8, m);
-    }
+fn test_bot_r<R: Rng>(idx: u8, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
+    TestBot::with_index_random(path, idx, rng)
 }
 
-fn step(gs: &mut GameState, _idx: u8, _mv: Move) {
-    gs.data1 += 1;
-    gs.data2 += 2;
-    gs.data3 += 3;
+fn game_state(gs: &str) -> GameState {
+    GameState::parse_string(&gs.trim_indent()).unwrap()
 }
-
-
-//fn main() {
-////    let mut rng = IsaacRng::new_from_u64(123456u64);
-//    let mut rng = IsaacRng::from_entropy();
-//    let rng0: IsaacRng0 = unsafe { transmute_copy(&rng) };
-//    println!("{:?}", rng0);
-//
-//    let mut results = [0u32; 20];
-//    for i in results.iter_mut() {
-//        *i = rng.next_u32();
-//    }
-//    println!("{:?}", results);
-//    println!("rng: {:?}", rng);
-//}

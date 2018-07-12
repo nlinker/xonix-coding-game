@@ -4,7 +4,6 @@ use rand::prelude::Rng;
 use model::Bot;
 use model::GameState;
 use model::Move;
-use std::str::from_utf8;
 use std::cell::RefCell;
 use std::rc::Rc;
 

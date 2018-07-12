@@ -192,30 +192,34 @@ mod test {
         let mut bots = [a, b, c, d];
         let names: Vec<String> = bots.iter().map(|bot| bot.name()).collect();
 
-        let mut the_match = create_match(5, 7, &names, 20, 0.9, Some(42));
-        let mut gs = game_state(r#"
-            *D*.*.*.*.*.*A
-            *. . . . . .*.
-            *. . . . . .*.
-            *. . . . . .*.
+        let mut the_match = create_match(5, 7, &names, 20, 0.9, Some(69));
+        let gs = game_state(r#"
             *C*.*.*.*.*.*B
-            reordering=[2,1,3,0]
+            *. . . . . .*.
+            *. . . . . .*.
+            *. . . . . .*.
+            *D*.*.*.*.*.*A
+            reordering=[3,0,2,1]
+            origins=[(4,6),(0,6),(0,0),(4,0)]
         "#);
-        gs.origins = vec![Point(0, 6), Point(4, 6), Point(4, 0), Point(0, 0)];
+        eprintln!("gs = \n{}", the_match.game_state);
         assert_eq!(gs, the_match.game_state);
 
-        let logger: Box<Fn(&GameState)> = Box::new(|_game_state| {});
+        let logger: Box<Fn(&GameState)> = Box::new(|gs| {
+            println!("{}", gs)
+        });
         run_match(&mut the_match, &mut bots, logger);
         let mut final_gs = game_state(r#"
-            "*.*.*.*.*.*A*.\n" +
-            "*D3.3.3. .0.*.\n" +
-            "*. . . . . .*.\n" +
-            "*.2. . .1.1.*B\n" +
-            "*.*C*.*.*.*.*.\n" +
-            "reordering=[2,1,3,0]\n" +
-            "stats=Stats(20,27,0,0,0,[1,2,1,3])
+            *.*.*.*.*.*A*.
+            *D3.3.3. .0.*.
+            *. . . . . .*.
+            *.2. . .1.1.*B
+            *.*C*.*.*.*.*.
+            reordering=[3,0,2,1]
+            origins=[(4,6),(0,6),(0,0),(4,0)]
+            stats=Stats(20,27,0,0,0,[1,2,1,3])
         "#);
-        final_gs.origins = gs.origins.clone();
+        assert_eq!(the_match.game_state.to_string(), final_gs.to_string());
         assert_eq!(the_match.game_state, final_gs);
     }
 
