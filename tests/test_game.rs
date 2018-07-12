@@ -17,6 +17,8 @@ mod test {
     use core::iter::FromIterator;
     use std::borrow::Borrow;
     use std::borrow::BorrowMut;
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
     #[test]
     fn test_indent_ops() {
@@ -181,12 +183,12 @@ mod test {
 
     #[test]
     fn test_run_match_with_reordering() {
-        let teh_rng = IsaacRng::new_from_u64(42);
+        let teh_rng = Rc::new(RefCell::new(IsaacRng::new_from_u64(666)));
 
-        let a = test_bot_r("dlu", 0, &teh_rng);
-        let b = test_bot_r("llurr", 0, &teh_rng);
-        let c = test_bot_r("urd", 0, &teh_rng);
-        let d = test_bot_r("rrrdlll", 0, &teh_rng);
+        let a = test_bot_r(0, teh_rng.clone(), "dlu");
+        let b = test_bot_r(1, teh_rng.clone(), "llurr");
+        let c = test_bot_r(2, teh_rng.clone(), "urd");
+        let d = test_bot_r(3, teh_rng.clone(), "rrrdlll");
         let mut bots = [a, b, c, d];
         let names: Vec<String> = bots.iter().map(|bot| bot.name()).collect();
 
@@ -225,8 +227,8 @@ mod test {
         TestBot::new(path)
     }
 
-    fn test_bot_r<R: Rng>(path: &str, idx: u8, rng: &R) -> TestBot<R> {
-        TestBot::with_random(path, idx, rng)
+    fn test_bot_r<R: Rng>(idx: u8, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
+        TestBot::with_index_random(path, idx, rng)
     }
 
     fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {

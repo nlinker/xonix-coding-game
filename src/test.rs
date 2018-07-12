@@ -6,6 +6,7 @@ use model::GameState;
 use model::Move;
 use std::str::from_utf8;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 // TODO move it to ../tests/test_bot.rs
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -13,25 +14,25 @@ pub struct TestBot<R: Rng> {
     path: Vec<u8>,
     iter: u32,
     idx: Option<u8>,
-    rng: Option<RefCell<R>>,
+    random: Option<Rc<RefCell<R>>>,
 }
 
 impl<R: Rng> TestBot<R> {
     pub fn new(s: &str) -> TestBot<R> {
         let path = s.as_bytes().to_vec();
-        TestBot { path, iter: 0, idx: None, rng: None }
+        TestBot { path, iter: 0, idx: None, random: None }
     }
-    pub fn with_random(s: &str, idx: u8, _rng: &R) -> TestBot<R> {
+    pub fn with_index_random(s: &str, idx: u8, rng: Rc<RefCell<R>>) -> TestBot<R> {
         let path = s.as_bytes().to_vec();
-        TestBot { path, iter: 0, idx: Some(idx), rng: None
-            // TODO rng: Some(rng)
-        }
+        TestBot { path, iter: 0, idx: Some(idx), random: Some(rng) }
     }
     pub fn name(&self) -> String {
-        self.idx.map(|id| {
-            let ch = (('A' as u8) + id) as char;
-            format!("{}: {}", ch, from_utf8(&self.path).unwrap())
-        }).unwrap_or_else(|| format!("_: {}", from_utf8(&self.path).unwrap()))
+//        self.idx.map(|id| {
+//            let ch = (('A' as u8) + id) as char;
+//            format!("{}: {}", ch, from_utf8(&self.path).unwrap())
+//        }).unwrap_or_else(|| format!("_: {}", from_utf8(&self.path).unwrap()))
+        self.idx.map(|id| format!("{}", ((('A' as u8) + id) as char).to_string()))
+            .unwrap_or_else(|| "?".to_string())
     }
 }
 
@@ -44,9 +45,9 @@ impl<R: Rng> Bot for TestBot<R> {
     fn do_move(&mut self, _gs: &GameState) -> Move {
         if self.iter >= self.path.len() as u32 {
             let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
-            match self.rng.as_mut() {
+            match self.random {
                 None => Move::Stop,
-                Some(r) => moves[r.borrow_mut().gen_range(0, moves.len())],
+                Some(ref mut r) => moves[r.borrow_mut().gen_range(0, moves.len())],
             }
         } else {
             let ch = self.path[self.iter as usize] as char;

@@ -74,6 +74,12 @@ pub struct GameState {
     pub reordering: Vec<u8>,
 }
 
+//#[derive(Clone, Eq, PartialEq, Debug)]
+//pub struct ClientGameState { pub field: Field }
+//
+//#[derive(Clone, Eq, PartialEq, Debug)]
+//pub struct ClientGameStateDelta {}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Player(pub Vec<Point>);
 
@@ -278,7 +284,7 @@ impl GameState {
             bite_count: 0,
             scores,
         });
-        let player_names = (0..np).map(|i| format!("player-{}", i)).collect();
+        let player_names = (0..np).map(|i| ((('A' as u8) + (i as u8)) as char).to_string()).collect();
         Ok(GameState { field, players, player_names, origins, stats, reordering })
     }
 
@@ -381,6 +387,12 @@ impl FromStr for GameState {
         GameState::parse_string(str)
     }
 }
+
+//impl fmt::Debug for GameState {
+//    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+//        fmt.write_str(&format!("{}", self))
+//    }
+//}
 
 impl fmt::Display for GameState {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
