@@ -245,9 +245,42 @@ mod test {
 
     #[test]
     fn test_run_tournament() {
+        let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+        let a = test_bot_r(0, random.clone(), "dlu");
+        let b = test_bot_r(1, random.clone(), "lur");
+        let c = test_bot_r(2, random.clone(), "urd");
+        let d = test_bot_r(3, random.clone(), "rdl");
+        let mut bots = [a, b, c, d];
+        let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
+        let logger = |_gs: &GameState| {};
 
+        let match_count = 100;
+        let mut game_states = Vec::<GameState>::with_capacity(match_count);
+        let mut replays = Vec::<Replay>::with_capacity(match_count);
+        for _ in 0..match_count {
+            let seed = (*random).borrow_mut().next_u64();
+            let mut cur_match = create_match(7, 7, &names, 32, 0.9, Some(seed));
+            let cur_replay = run_match(&mut cur_match, &mut bots, &logger);
+            replays.push(cur_replay);
+            game_states.push(cur_match.game_state);
+        }
+        // tournament is done, check some matches
+        let exp66 = game_state(r#"
+            *.*.*.*.*.*.*.
+            *.3. . . .0.*.
+            *.3. . .0.0.*.
+            *.1D . . . .*A
+            *B1. . .2. .*.
+            *.1.2.2.2C2.*.
+            *.*.*.*.*.*.*.
+            reordering=[2,0,3,1]
+            stats=Stats(32,37,0,2,0,[3,3,5,2])
+            origins=[(0,6),(6,0),(6,6),(0,0)]
+        "#);
+        let rgs66 = run_replay(&replays[66], &logger);
+        debug_assert_eq!(exp66, game_states[66]);
+        debug_assert_eq!(exp66, rgs66);
     }
-
 
     // === helpers ===
 
