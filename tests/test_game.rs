@@ -243,6 +243,12 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_run_tournament() {
+
+    }
+
+
     // === helpers ===
 
     fn game_state(gs: &str) -> GameState {

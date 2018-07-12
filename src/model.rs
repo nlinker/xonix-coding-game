@@ -371,6 +371,70 @@ impl GameState {
         }
         Ok(ParseRestResult { reordering, origins, stats })
     }
+
+    pub fn format_string(&self, field_only: bool) -> String {
+        let m = self.field.m;
+        let n = self.field.n;
+        let np = self.players.len();
+        let capacity = if field_only { m * (2 * n + 1) + 2 } else { m * 2 * (m + n) + 10 * np + 30 };
+        let mut result = String::with_capacity(capacity);
+
+        let mut layer0 = vec![vec![' ' as u8; n]; m];
+        let mut layer1 = vec![vec!['.' as u8; n]; m];
+        for i in 0..m {
+            for j in 0..n {
+                let cell = self.field.cells[i][j];
+                match cell {
+                    Cell::Empty => { layer0[i][j] = ' ' as u8 }
+                    Cell::Border => { layer0[i][j] = '*' as u8 }
+                    Cell::Owned(c) => layer0[i][j] = ('0' as u8) + c,
+                }
+            }
+        }
+        for k in 0..np {
+            let player = &self.players[k].0;
+            let ch = ('A' as u8) + (k as u8);
+            for l in 0..player.len() {
+                let i = player[l].0 as usize;
+                let j = player[l].1 as usize;
+                // if it is the last element == player's head
+                if l == player.len() - 1 {
+                    layer1[i][j] = ch;
+                } else {
+                    layer1[i][j] = ch.to_ascii_lowercase();
+                }
+            }
+        }
+        // now put all the stuff
+        for i in 0..m {
+            for j in 0..n {
+                result.push(layer0[i][j] as char);
+                result.push(layer1[i][j] as char);
+            }
+            result.push('\n');
+        }
+        if !field_only {
+            result.push_str("reordering=[");
+            result.push_str(&join(&self.reordering[..], &","));
+            result.push_str("]\n");
+
+            result.push_str("stats=Stats(");
+            result.push_str(&format!("{},{},{},{},{},[",
+                &self.stats.iteration,
+                &self.stats.filled_count,
+                &self.stats.head_to_head_count,
+                &self.stats.ouroboros_count,
+                &self.stats.bite_count
+            ));
+            result.push_str(&join(&self.stats.scores[..], &","));
+            result.push_str("])\n");
+
+            result.push_str("origins=[");
+            result.push_str(&join(&self.origins[..], &","));
+            result.push_str("]");
+        }
+        return result;
+    }
 }
 
 //impl fmt::Debug for GameState {
@@ -407,63 +471,7 @@ impl FromStr for GameState {
 
 impl fmt::Display for GameState {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let m = self.field.m;
-        let n = self.field.n;
-        let np = self.players.len();
-
-        let mut layer0 = vec![vec![' ' as u8; n]; m];
-        let mut layer1 = vec![vec!['.' as u8; n]; m];
-        for i in 0..m {
-            for j in 0..n {
-                let cell = self.field.cells[i][j];
-                match cell {
-                    Cell::Empty => {layer0[i][j] = ' ' as u8}
-                    Cell::Border => {layer0[i][j] = '*' as u8}
-                    Cell::Owned(c) => layer0[i][j] = ('0' as u8) + c,
-                }
-            }
-        }
-        for k in 0..np {
-            let player = &self.players[k].0;
-            let ch = ('A' as u8) + (k as u8);
-            for l in 0..player.len() {
-                let i = player[l].0 as usize;
-                let j = player[l].1 as usize;
-                // if it is the last element == player's head
-                if l == player.len() - 1 {
-                    layer1[i][j] = ch;
-                } else {
-                    layer1[i][j] = ch.to_ascii_lowercase();
-                }
-            }
-        }
-        // now put all the stuff
-        for i in 0..m {
-            for j in 0..n {
-                fmt.write_char(layer0[i][j] as char);
-                fmt.write_char(layer1[i][j] as char);
-            }
-            fmt.write_char('\n');
-        }
-        fmt.write_str("reordering=[");
-        fmt.write_str(&join(&self.reordering[..], &","));
-        fmt.write_str("]\n");
-
-        fmt.write_str("stats=Stats(");
-        fmt.write_str(&format!("{},{},{},{},{},[",
-            &self.stats.iteration,
-            &self.stats.filled_count,
-            &self.stats.head_to_head_count,
-            &self.stats.ouroboros_count,
-            &self.stats.bite_count
-        ));
-        fmt.write_str(&join(&self.stats.scores[..], &","));
-        fmt.write_str("])\n");
-
-        fmt.write_str("origins=[");
-        fmt.write_str(&join(&self.origins[..], &","));
-        fmt.write_str("]");
-
+        fmt.write_str(&self.format_string(false));
         Ok(())
     }
 }
