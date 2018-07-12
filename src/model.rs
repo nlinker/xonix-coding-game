@@ -92,6 +92,7 @@ pub struct Replay {
     pub width: usize,
     pub duration: u32,
     pub ratio: f32,
+    pub player_names: Vec<String>,
     pub moves: Vec<Vec<Move>>,
     pub random_seed: Option<u64>,
 }
@@ -887,6 +888,7 @@ pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: &Fn(&Gam
         width: the_match.game_state.field.n,
         duration: the_match.duration,
         ratio: the_match.ratio,
+        player_names: the_match.game_state.player_names.clone(),
         moves: all_moves,
         random_seed: the_match.random_seed
     }
@@ -894,7 +896,23 @@ pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: &Fn(&Gam
 
 /// returns the final game state after the replay run
 pub fn run_replay(replay: &Replay, logger: &Fn(&GameState)) -> GameState {
-
-
-    unimplemented!()
+    let mut gs: GameState = create_match(
+        replay.height,
+        replay.width,
+        &replay.player_names,
+        replay.duration,
+        replay.ratio,
+        replay.random_seed
+    ).game_state;
+    for tick in 0..(replay.moves.len()) {
+        gs.stats.iteration = (tick + 1) as u32;
+        let np = gs.players.len();
+        for k in 0..np {
+            let idx = gs.reordering[k] as usize;
+            let m = replay.moves[tick][idx];
+            step(&mut gs, idx as u8, m);
+            logger(&gs);
+        }
+    }
+    gs
 }

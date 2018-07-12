@@ -241,7 +241,6 @@ mod test {
             debug_assert_eq!(match_k.game_state, gs1);
             debug_assert_eq!(match_k.game_state, gs2);
         }
-
     }
 
     // === helpers ===
