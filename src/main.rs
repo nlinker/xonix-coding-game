@@ -54,6 +54,7 @@ fn main() {
 
 // reset to default color is \e[0m
 // https://misc.flogisoft.com/bash/tip_colors_and_formatting
+// must be at least 10 items
 const COLORS: &'static [&'static str] = &[
     "\x1B[91m", "\x1B[92m", "\x1B[93m", "\x1B[94m",
     "\x1B[95m", "\x1B[96m", "\x1B[97m", "\x1B[90m",
@@ -104,10 +105,15 @@ pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> St
     }
     for i in 0..m {
         for j in 0..n {
-            if j == 0 {
-                result.push(layer0[i][j] as char);
-            } else {
+            if j != 0 {
                 result.push(' ');
+            }
+            if use_colors && layer0[i][j].is_ascii_digit() {
+                let d = (layer0[i][j] - ('0' as u8)) as usize;
+                result.push_str(COLORS[d]);
+                result.push(layer0[i][j] as char);
+                result.push_str("\x1B[97m");
+            } else {
                 result.push(layer0[i][j] as char);
             }
         }
