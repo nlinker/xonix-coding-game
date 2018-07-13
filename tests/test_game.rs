@@ -150,7 +150,7 @@ mod test {
             *.*.*.*.*.*.*.
             *. b B . A .*.
             *. a a a a .*.
-            *. . . . . .*.
+            *. c c C . .*.
             *.*.*.*.*.*.*.
         "#);
         let a = test_bot("u");
@@ -159,11 +159,10 @@ mod test {
             *.*.*.*.*A*.*.
             *.0.0B0.0. .*.
             *.0.0.0.0. .*.
-            *. . . . . .*.
+            *. c c C . .*.
             *.*.*.*.*.*.*.
         "#);
         gs2.stats.iteration = 1;
-        assert_eq!(gs2.stats, gs1.stats);
         assert_eq!(gs2, gs1);
     }
 
