@@ -38,14 +38,17 @@ fn main() {
     let logger = |gs: &GameState| {
         if gs.stats.iteration > 171 {
             println!("{}", prettify_game_state(gs, true, true));
-            thread::sleep(Duration::from_millis(100));
+            thread::sleep(Duration::from_millis(1));
         }
     };
     for _ in 0..100 {
         // run match
+        let m = 20;
+        let n = 20;
         let match_k_seed = (*random).borrow_mut().next_u64();
-        let mut match_k = create_match(12, 12, &names, 1024, 0.9, Some(match_k_seed));
+        let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let replay_k = run_match(&mut match_k, &mut bots, &logger);
+        println!("{}", "\n".repeat(m + names.len()))
     }
 }
 
