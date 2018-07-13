@@ -37,7 +37,9 @@ impl<R: Rng> TestBot<R> {
 
 impl<R: Rng> Bot for TestBot<R> {
 
-    fn reset(&mut self, _gs: &GameState, _idx: u8, _seed: u64) {
+    fn reset(&mut self, _gs: &GameState, idx: u8, _seed: u64) {
+        self.iter = 0;
+        self.idx = Some(idx);
         // reset the inner state
         // println!("reset state index={} seed={}", idx, seed)
     }

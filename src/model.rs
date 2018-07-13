@@ -114,18 +114,18 @@ pub struct ParseRestResult {
 }
 
 impl Player {
-    fn head(&self) -> Option<&Point> {
+    pub fn head(&self) -> Option<&Point> {
         // the last element in the vector
         if self.0.is_empty() { None } else { Some(&self.0[self.0.len() - 1]) }
     }
-    fn tail(&self) -> Option<&[Point]>{
+    pub fn tail(&self) -> Option<&[Point]>{
         // all elements except the vector
         if self.0.is_empty() { None } else { Some(&self.0[0..self.0.len() - 1]) }
     }
-    fn body(&self) -> &Vec<Point> {
+    pub fn body(&self) -> &Vec<Point> {
         &self.0
     }
-    fn body_mut(&mut self) -> &mut Vec<Point> {
+    pub fn body_mut(&mut self) -> &mut Vec<Point> {
         &mut self.0
     }
 }
@@ -719,23 +719,16 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
                 panic!("Broken invariant");
             } else {
                 let head = *gs.players[k].head().expect("Broken invariant");
-                let mut rest = gs.players[k].body().iter().filter(|p| {
-                    // if the cell is Owned
-                    let i = p.0 as usize;
-                    let j = p.1 as usize;
-                    match gs.field.cells[i][j] {
-                        Cell::Owned(_) => true,
-                        _ => false
-                    }})
-                    .map(|p| *p)
-                    .collect_vec();
-                // build the k-th body
-                if rest.contains(&head) {
-                    gs.players[k].body_mut().clear();
-                    gs.players[k].body_mut().push(head);
-                } else {
-                    gs.players[k].body_mut().clear();
-                    gs.players[k].body_mut().append(&mut rest);
+                let cells = &gs.field.cells;
+                gs.players[k].body_mut().retain(|ref p| {
+                    // remove the points from the body if they are owned by someone else
+                    match cells[p.0 as usize][p.1 as usize] {
+                        Cell::Owned(_) => false,
+                        _ => true
+                    }
+                });
+                // just in case
+                if gs.players[k].body().is_empty() {
                     gs.players[k].body_mut().push(head);
                 }
             }
