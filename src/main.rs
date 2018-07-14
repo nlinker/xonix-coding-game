@@ -15,8 +15,9 @@ use std::cell::RefCell;
 use std::time::Duration;
 use std::thread;
 use std::rc::Rc;
+
 use xcg::model::*;
-use xcg::test::TestBot;
+use xcg::bot::TestBot;
 use xcg::utils::Trim;
 
 fn main() {

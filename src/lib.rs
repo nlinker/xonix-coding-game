@@ -8,6 +8,6 @@ extern crate rand;
 extern crate regex;
 extern crate conv;
 
+pub mod bot;
 pub mod model;
 pub mod utils;
-pub mod test;

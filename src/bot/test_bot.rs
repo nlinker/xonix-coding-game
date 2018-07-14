@@ -1,11 +1,12 @@
 extern crate rand;
 
 use rand::prelude::Rng;
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use model::Bot;
 use model::GameState;
 use model::Move;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 // TODO move it to ../tests/test_bot.rs
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -66,4 +67,3 @@ impl<R: Rng> Bot for TestBot<R> {
         }
     }
 }
-
