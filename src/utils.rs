@@ -87,6 +87,22 @@ pub fn is_blank(s: &str) -> bool {
             .all(|(_, c)| c.is_ascii_whitespace())
 }
 
+// === Bound trait ===
+
+pub trait Bound<T> {
+    fn bound(self, lower: T, upper: T) -> T;
+}
+
+impl<T> Bound<T> for T where T: PartialOrd {
+    fn bound(self, lower: T, upper: T) -> T {
+        if self <= lower { lower }
+            else if self >= upper { upper }
+                else { self }
+    }
+}
+
+// some tricks to un-hide IsaacRng contents
+
 const RAND_SIZE_LEN: usize = 8;
 const RAND_SIZE: usize = 1 << RAND_SIZE_LEN;
 

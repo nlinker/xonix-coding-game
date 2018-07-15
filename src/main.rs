@@ -18,38 +18,42 @@ use std::rc::Rc;
 
 use xcg::model::*;
 use xcg::bot::TestBot;
+use xcg::bot::Bot1;
 use xcg::utils::Trim;
 
 fn main() {
-    let mut buf = [0; 16];
-    {
-        let (mut b1, mut b2) = buf.split_at_mut(8);
-        byteorder::LittleEndian::write_u64(&mut b1, 123);
-        byteorder::LittleEndian::write_u64(&mut b2, 123);
-    }
-    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
+//    let mut buf = [0; 16];
+//    {
+//        let (mut b1, mut b2) = buf.split_at_mut(8);
+//        byteorder::LittleEndian::write_u64(&mut b1, 123);
+//        byteorder::LittleEndian::write_u64(&mut b2, 123);
+//    }
+//    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
     let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
 
-    let a = test_bot_r(0, random.clone(), "dllll");
-    let b = test_bot_r(1, random.clone(), "luuuu");
-    let c = test_bot_r(2, random.clone(), "urrrr");
-    let d = test_bot_r(3, random.clone(), "rdddd");
+    let a = Bot1::new(0);
+    let b = Bot1::new(1);
+    let c = Bot1::new(2);
+    let d = Bot1::new(3);
     let mut bots = [a, b, c, d];
-    let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
+    let names: Vec<String> = bots.iter().enumerate()
+        .map(|(k, _)| ((('A' as u8) + (k as u8)) as char).to_string())
+        .collect();
+
     let logger = |gs: &GameState| {
-        if gs.stats.iteration > 171 {
+        if gs.stats.iteration > 0 {
             println!("{}", prettify_game_state(gs, true, true));
-            thread::sleep(Duration::from_millis(1));
+            thread::sleep(Duration::from_millis(10));
         }
     };
     for _ in 0..100 {
         // run match
-        let m = 20;
-        let n = 20;
+        let m = 30;
+        let n = 60;
         let match_k_seed = (*random).borrow_mut().next_u64();
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let replay_k = run_match(&mut match_k, &mut bots, &logger);
-        println!("{}", "\n".repeat(m + names.len()))
+        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);
     }
 }
 

@@ -880,6 +880,8 @@ pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: &Fn(&Gam
             let m = bots[idx].do_move(&the_match.game_state);
             step(&mut the_match.game_state, idx as u8, m);
             moves[idx] = m;
+            // is it better to do here?
+            // logger(&the_match.game_state);
         }
         logger(&the_match.game_state);
         all_moves.push(moves);
