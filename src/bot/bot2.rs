@@ -21,7 +21,7 @@ pub struct Bot2<R: Rng> {
 }
 
 
-fn select(o: Point, a: Point, x: Point) -> bool {
+fn may_be_selected(o: Point, a: Point, x: Point) -> bool {
     let Point(oi, oj) = o;
     let Point(ai, aj) = a;
     let Point(xi, xj) = x;
@@ -29,21 +29,21 @@ fn select(o: Point, a: Point, x: Point) -> bool {
     // 5 9 1
     // 6 7 8
     if false { false }
-        else if oi == ai && oj < aj { aj <= xj }
-            else if ai < oi && oj < aj  { xi <= ai && aj <= xj }
-                else if ai < oi && oj == aj { xi <= ai }
-                    else if ai < oi && aj < oj  { xi <= ai && xj <= aj }
-                        else if oi == ai && aj < oj { xj <= aj }
-                            else if ai > oi && aj < oj  { ai <= xi && xj <= aj }
-                                else if ai > oi && oj == aj { ai <= xi }
-                                    else if ai > oi && oj < aj  { ai <= xi && aj <= xj }
-                                        else if oi == ai && oj < aj { aj <= xj }
-                                            else                        { ai != xi && aj != xj }
+    else if oi == ai && oj < aj { aj <= xj }
+    else if oi > ai && oj < aj  { xi <= ai && aj <= xj }
+    else if oi > ai && oj == aj { xi <= ai }
+    else if oi > ai && oj > aj  { xi <= ai && xj <= aj }
+    else if oi == ai && oj > aj { xj <= aj }
+    else if oi < ai && oj > aj  { ai <= xi && xj <= aj }
+    else if oi < ai && oj == aj { ai <= xi }
+    else if oi < ai && oj < aj  { ai <= xi && aj <= xj }
+    else if oi == ai && oj < aj { aj <= xj }
+    else                        { ai != xi && aj != xj }
 }
 
 fn border_or_owned_partial(gs: &GameState, o: Point, a: Point, p: Point) -> bool {
     let cell = gs.field.cells[p.0 as usize][p.1 as usize];
-    let selected = select(o, a, p);
+    let selected = may_be_selected(o, a, p);
     (cell != Cell::Empty) && selected
 }
 

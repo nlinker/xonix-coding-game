@@ -35,6 +35,7 @@ fn main() {
     let b = Bot1::new(1);
     let c = Bot1::new(2);
     let d = Bot1::new(3);
+    //let mut bots = [a];
     let mut bots = [a, b, c, d];
     let names: Vec<String> = bots.iter().enumerate()
         .map(|(k, _)| ((('A' as u8) + (k as u8)) as char).to_string())
@@ -48,8 +49,8 @@ fn main() {
     };
     for _ in 0..100 {
         // run match
-        let m = 30;
-        let n = 60;
+        let m = 24;
+        let n = 30;
         let match_k_seed = (*random).borrow_mut().next_u64();
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let replay_k = run_match(&mut match_k, &mut bots, &logger);
