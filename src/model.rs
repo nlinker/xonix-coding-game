@@ -842,7 +842,7 @@ pub fn create_match<T: AsRef<str>>(
     Match { duration, ratio, game_state, random_seed }
 }
 
-pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [B], logger: &Fn(&GameState)) -> Replay {
+pub fn run_match<B: Bot>(the_match: &mut Match, bots: &mut [Box<B>], logger: &Fn(&GameState)) -> Replay {
     let nb = bots.len();
     debug_assert_eq!(nb, the_match.game_state.reordering.len());
     debug_assert_eq!(nb, the_match.game_state.players.len());

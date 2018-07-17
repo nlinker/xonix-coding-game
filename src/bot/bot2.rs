@@ -1,23 +1,52 @@
 #![allow(unused)]
 
-extern crate rand;
-
-use rand::prelude::Rng;
+use model::Bot;
+use model::Cell;
+use model::GameState;
 use model::Move;
 use model::Point;
+use rand::IsaacRng;
+use rand::prelude::{Rng, FromEntropy};
 use std::cell::RefCell;
-use model::GameState;
-use model::Cell;
 use utils::Bound;
 
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Bot2<R: Rng> {
-    index: u8,
+#[derive(Clone, Debug)]
+pub struct Bot2 {
+    idx: usize,
+    random: RefCell<IsaacRng>,
     m: usize,
     n: usize,
-    random: RefCell<R>,
     destination: Option<Point>,
-    last_move: Option<Move>,
+    last_move: Move,
+}
+
+impl Bot for Bot2 {
+    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
+        self.idx = idx as usize;
+        self.m = gs.field.m;
+        self.n = gs.field.n;
+        self.random = RefCell::new(IsaacRng::new_from_u64(seed));
+    }
+
+    fn do_move(&mut self, gs: &GameState) -> Move {
+        Move::Stop
+    }
+}
+
+impl Bot2 {
+    pub fn new(idx: u8) -> Self {
+        Bot2 {
+            idx: idx as usize,
+            random: RefCell::new(IsaacRng::from_entropy()),
+            m: 0,
+            n: 0,
+            destination: None,
+            last_move: Move::Stop
+        }
+    }
+
+
+
 }
 
 

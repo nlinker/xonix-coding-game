@@ -1,13 +1,11 @@
-extern crate rand;
-
-use std::cell::RefCell;
-use rand::prelude::{Rng, FromEntropy};
-use rand::IsaacRng;
 use model::Bot;
+use model::Cell;
+use model::GameState;
 use model::Move;
 use model::Point;
-use model::GameState;
-use model::Cell;
+use rand::IsaacRng;
+use rand::prelude::{FromEntropy, Rng};
+use std::cell::RefCell;
 use utils::Bound;
 
 #[derive(Clone, Debug)]
@@ -100,9 +98,9 @@ impl Bot for Bot1 {
 }
 
 impl Bot1 {
-    pub fn new(index: u8) -> Self {
+    pub fn new(idx: u8) -> Self {
         Bot1 {
-            idx: index as usize,
+            idx: idx as usize,
             random: RefCell::new(IsaacRng::from_entropy()),
             m: 0,
             n: 0,
@@ -182,11 +180,3 @@ fn select_move(i: i16) -> Move {
         _ => unreachable!(),
     }
 }
-
-//def bounded: Point = {
-//    val i = it.getRow
-//    val j = it.getCol
-//    if (0 <= i && i < m && 0 <= j && j < n) it
-//    else Point.of(i.bound(0, m - 1), j.bound(0, n - 1))
-//}
-

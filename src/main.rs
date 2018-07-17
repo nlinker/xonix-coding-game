@@ -19,6 +19,7 @@ use std::rc::Rc;
 use xcg::model::*;
 use xcg::bot::TestBot;
 use xcg::bot::Bot1;
+use xcg::bot::Bot2;
 use xcg::utils::Trim;
 
 fn main() {
@@ -30,13 +31,15 @@ fn main() {
 //    }
 //    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
     let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+    let m = 24;
+    let n = 30;
 
     let a = Bot1::new(0);
     let b = Bot1::new(1);
-    let c = Bot1::new(2);
-    let d = Bot1::new(3);
+    let c = Bot2::new(2);
+    let d = Bot2::new(3);
     //let mut bots = [a];
-    let mut bots = [a, b, c, d];
+    let mut bots: [Box<Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
     let names: Vec<String> = bots.iter().enumerate()
         .map(|(k, _)| ((('A' as u8) + (k as u8)) as char).to_string())
         .collect();
@@ -49,8 +52,6 @@ fn main() {
     };
     for _ in 0..100 {
         // run match
-        let m = 24;
-        let n = 30;
         let match_k_seed = (*random).borrow_mut().next_u64();
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let replay_k = run_match(&mut match_k, &mut bots, &logger);
