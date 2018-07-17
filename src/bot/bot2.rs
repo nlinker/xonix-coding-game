@@ -11,16 +11,18 @@ use std::cell::RefCell;
 use utils::Bound;
 
 #[derive(Clone, Debug)]
-pub struct Bot2 {
+pub struct Bot2<'a> {
     idx: usize,
     random: RefCell<IsaacRng>,
     m: usize,
     n: usize,
-    destination: Option<Point>,
-    last_move: Move,
+    cur_me: Vec<Point>,
+    last_me: Vec<Point>,
+    path: &'a [Point],
+//     gs: Option<&'a GameState>
 }
 
-impl Bot for Bot2 {
+impl<'a> Bot for Bot2<'a> {
     fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
         self.idx = idx as usize;
         self.m = gs.field.m;
@@ -29,23 +31,48 @@ impl Bot for Bot2 {
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
-        Move::Stop
+        let default_path = vec![];
+        self.last_me = self.cur_me.clone();
+        self.cur_me = *gs.players[self.idx].body();
+        if self.cur_me.is_empty() {
+            return Move::Stop;
+        }
+        let cur_head = gs.players[self.idx].head().unwrap();
+        // if we were flooded or bitten, then reset the path
+        if self.cur_me.len() < self.last_me.len() {
+            self.path = &default_path;
+        }
+
+        let the_move = if !self.path.is_empty() {
+            let new_head = self.path.first().unwrap();
+            self.path = &self.path[1..];
+            direction(cur_head, new_head)
+        } else {
+            Move::Stop // TODO
+        };
+
+        the_move
     }
 }
 
-impl Bot2 {
+impl<'a> Bot2<'a> {
     pub fn new(idx: u8) -> Self {
         Bot2 {
             idx: idx as usize,
             random: RefCell::new(IsaacRng::from_entropy()),
             m: 0,
             n: 0,
-            destination: None,
-            last_move: Move::Stop
+            cur_me: vec![],
+            last_me: vec![],
+            path: &vec![],
         }
     }
 
-
+    fn cells(gs: &GameState, p: Point) -> Cell {
+        let from_x = |x: i16| x as usize;
+        let from_y = |y: i16| gs.field.m - 1 - (y as usize);
+        gs.field.cells[from_y(p.1)][from_x(p.0)]
+    }
 
 }
 
@@ -102,7 +129,7 @@ fn find_closest(gs: &GameState, src: Point, predicate: impl Fn(&Point) -> bool) 
     None
 }
 
-fn direction(src: Point, dst: Point) -> Move {
+fn direction(src: &Point, dst: &Point) -> Move {
     let Point(si, sj) = src;
     let Point(di, dj) = dst;
     if di == si && dj <= sj {
