@@ -68,6 +68,7 @@ impl<'a> Bot2<'a> {
         }
     }
 
+    /// Note: Decartes coordinates to accept
     fn cells(gs: &GameState, p: Point) -> Cell {
         let from_x = |x: i16| x as usize;
         let from_y = |y: i16| gs.field.m - 1 - (y as usize);
