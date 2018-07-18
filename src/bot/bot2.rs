@@ -18,8 +18,9 @@ pub struct Bot2 {
     n: usize,
     cur_me: Vec<Point>,
     last_me: Vec<Point>,
-//    cur_path: &'a [Point],
-//     gs: Option<&'a GameState>
+    path: Vec<Point>,
+    path_pos: usize,
+    gs: Option<Box<GameState>>,
 }
 
 impl Bot for Bot2 {
@@ -31,27 +32,37 @@ impl Bot for Bot2 {
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
-//        self.last_me = self.cur_me.clone();
-//        self.cur_me = *gs.players[self.idx].body();
-//        if self.cur_me.is_empty() {
-//            return Move::Stop;
-//        }
-//        let cur_head = gs.players[self.idx].head().unwrap();
-//        // if we were flooded or bitten, then reset the path
-//        if self.cur_me.len() < self.last_me.len() {
-//            self.path = &vec![];
-//        }
-//
-//        let the_move = if !self.path.is_empty() {
-//            let new_head = self.path.first().unwrap();
-//            self.path = &self.path[1..];
-//            direction(cur_head, new_head)
-//        } else {
-//            Move::Stop // TODO
-//        };
-//
-//        the_move
-        Move::Stop
+        self.last_me = self.cur_me.clone();
+        self.cur_me = gs.players[self.idx].body().iter().map(|p| self.to_decartes(p)).collect();
+        if self.cur_me.is_empty() {
+            return Move::Stop;
+        }
+        let cur_head = gs.players[self.idx].head().unwrap();
+        // if we were flooded or bitten, then reset the path
+        if self.cur_me.len() < self.last_me.len() {
+            self.path = vec![];
+            self.path_pos = 0;
+        }
+
+        let the_move = if !self.path.is_empty() {
+            if self.path_pos < self.path.len() {
+                self.path_pos += 1;
+            } else {
+                self.path_pos = 0;
+            }
+            let new_head = self.path.first().unwrap();
+            direction(cur_head, new_head)
+        } else {
+            // generate the new path
+            let mut empties = self.find_random_empty(20);
+            &empties.sort_by_key(|p| distance(cur_head, p));
+            // now try to take approximately 5th element
+            let the_empty = &empties[..5].last();
+            eprintln!("the_empty = {:#?}", the_empty);
+            Move::Stop
+        };
+
+        the_move
     }
 }
 
@@ -64,19 +75,47 @@ impl Bot2 {
             n: 0,
             cur_me: vec![],
             last_me: vec![],
-//            path: &vec![],
+            path: vec![],
+            path_pos: 0,
+            gs: None
         }
     }
 
     /// Note: Decartes coordinates to accept
-    fn cells(gs: &GameState, p: Point) -> Cell {
-        let from_x = |x: i16| x as usize;
-        let from_y = |y: i16| gs.field.m - 1 - (y as usize);
-        gs.field.cells[from_y(p.1)][from_x(p.0)]
+    fn cells(&self, p: &Point) -> Cell {
+        let gs = &self.gs.unwrap();
+        let from_decartes_x = |x: i16| x as usize;
+        let from_decartes_y = |y: i16| gs.field.m - 1 - (y as usize);
+        gs.field.cells[from_decartes_y(p.1)][from_decartes_x(p.0)]
+    }
+
+    fn to_decartes(&self, p: &Point) -> Point {
+        Point(p.1, (self.m as i16) - 1 - p.0)
+    }
+
+    fn find_random(&self, attempts: usize, predicate: impl Fn(&Point) -> bool) -> Vec<Point> {
+        let mut buf: Vec<Point> = Vec::with_capacity(attempts);
+        for _ in 0..attempts {
+            let x = self.random.borrow_mut().gen_range(0, self.n as i16);
+            let y = self.random.borrow_mut().gen_range(0, self.m as i16);
+            let p = Point(x, y);
+            if predicate(&p) {
+                buf.push(p)
+            }
+        }
+        buf
+    }
+
+    fn find_random_empty(&self, attempts: usize) -> Vec<Point> {
+        self.find_random(attempts, |p| self.cells(&p) == Cell::Empty)
     }
 
 }
 
+
+fn distance(p: &Point, q: &Point) -> i16 {
+    (p.0 - q.0).abs() + (p.1 - q.1).abs()
+}
 
 fn may_be_selected(o: Point, a: Point, x: Point) -> bool {
     let Point(oi, oj) = o;
