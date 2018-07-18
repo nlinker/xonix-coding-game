@@ -11,18 +11,18 @@ use std::cell::RefCell;
 use utils::Bound;
 
 #[derive(Clone, Debug)]
-pub struct Bot2<'a> {
+pub struct Bot2 {
     idx: usize,
     random: RefCell<IsaacRng>,
     m: usize,
     n: usize,
     cur_me: Vec<Point>,
     last_me: Vec<Point>,
-    path: &'a [Point],
+//    cur_path: &'a [Point],
 //     gs: Option<&'a GameState>
 }
 
-impl<'a> Bot for Bot2<'a> {
+impl Bot for Bot2 {
     fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
         self.idx = idx as usize;
         self.m = gs.field.m;
@@ -31,31 +31,31 @@ impl<'a> Bot for Bot2<'a> {
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
-        let default_path = vec![];
-        self.last_me = self.cur_me.clone();
-        self.cur_me = *gs.players[self.idx].body();
-        if self.cur_me.is_empty() {
-            return Move::Stop;
-        }
-        let cur_head = gs.players[self.idx].head().unwrap();
-        // if we were flooded or bitten, then reset the path
-        if self.cur_me.len() < self.last_me.len() {
-            self.path = &default_path;
-        }
-
-        let the_move = if !self.path.is_empty() {
-            let new_head = self.path.first().unwrap();
-            self.path = &self.path[1..];
-            direction(cur_head, new_head)
-        } else {
-            Move::Stop // TODO
-        };
-
-        the_move
+//        self.last_me = self.cur_me.clone();
+//        self.cur_me = *gs.players[self.idx].body();
+//        if self.cur_me.is_empty() {
+//            return Move::Stop;
+//        }
+//        let cur_head = gs.players[self.idx].head().unwrap();
+//        // if we were flooded or bitten, then reset the path
+//        if self.cur_me.len() < self.last_me.len() {
+//            self.path = &vec![];
+//        }
+//
+//        let the_move = if !self.path.is_empty() {
+//            let new_head = self.path.first().unwrap();
+//            self.path = &self.path[1..];
+//            direction(cur_head, new_head)
+//        } else {
+//            Move::Stop // TODO
+//        };
+//
+//        the_move
+        Move::Stop
     }
 }
 
-impl<'a> Bot2<'a> {
+impl Bot2 {
     pub fn new(idx: u8) -> Self {
         Bot2 {
             idx: idx as usize,
@@ -64,7 +64,7 @@ impl<'a> Bot2<'a> {
             n: 0,
             cur_me: vec![],
             last_me: vec![],
-            path: &vec![],
+//            path: &vec![],
         }
     }
 

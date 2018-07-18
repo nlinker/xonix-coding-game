@@ -16,128 +16,91 @@ use std::time::Duration;
 use std::thread;
 use std::rc::Rc;
 
-use xcg::model::*;
-use xcg::bot::TestBot;
-use xcg::bot::Bot1;
-use xcg::bot::Bot2;
-use xcg::utils::Trim;
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash, PartialOrd)]
+pub struct Point(pub i16, pub i16);
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub enum Move {
+    Right, Up, Left, Down, Stop,
+}
+
+struct GameState {
+    iteration: u16,
+}
+
+trait Bot {
+    fn do_move(&mut self, gs: &GameState) -> Move;
+}
+
+struct Bot1 {
+    random: RefCell<IsaacRng>,
+    path: Vec<Point>,
+    path_pos: Option<usize>,
+}
+
+impl Bot1 {
+    fn new(seed: u64) -> Self {
+        Bot1 {
+            random: RefCell::new(IsaacRng::new_from_u64(seed)),
+            path: vec![],
+            path_pos: None,
+        }
+    }
+}
 
 fn main() {
-//    let mut buf = [0; 16];
-//    {
-//        let (mut b1, mut b2) = buf.split_at_mut(8);
-//        byteorder::LittleEndian::write_u64(&mut b1, 123);
-//        byteorder::LittleEndian::write_u64(&mut b2, 123);
+    let mut b = Bot1::new(12);
+    b.path = vec![Point(0, 0), Point(0, 1), Point(0, 2)];
+    b.path_pos = Some(1);
+}
+
+//use xcg::model::*;
+//use xcg::bot::TestBot;
+//use xcg::bot::Bot1;
+//use xcg::bot::Bot2;
+//use xcg::utils::Trim;
+//
+//fn main() {
+////    let mut buf = [0; 16];
+////    {
+////        let (mut b1, mut b2) = buf.split_at_mut(8);
+////        byteorder::LittleEndian::write_u64(&mut b1, 123);
+////        byteorder::LittleEndian::write_u64(&mut b2, 123);
+////    }
+////    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
+//    let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+//    let m = 24;
+//    let n = 30;
+//
+//    let a = Bot1::new(0);
+//    let b = Bot1::new(1);
+//    let c = Bot2::new(2);
+//    let d = Bot2::new(3);
+//    //let mut bots = [a];
+//    let mut bots: [Box<Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
+//    let names: Vec<String> = bots.iter().enumerate()
+//        .map(|(k, _)| ((('A' as u8) + (k as u8)) as char).to_string())
+//        .collect();
+//
+//    let logger = |gs: &GameState| {
+//        if gs.stats.iteration > 0 {
+//            println!("{}", prettify_game_state(gs, true, true));
+//            thread::sleep(Duration::from_millis(10));
+//        }
+//    };
+//    for _ in 0..100 {
+//        // run match
+//        let match_k_seed = (*random).borrow_mut().next_u64();
+//        let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
+//        let replay_k = run_match(&mut match_k, &mut bots, &logger);
+//        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);
 //    }
-//    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
-    let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
-    let m = 24;
-    let n = 30;
-
-    let a = Bot1::new(0);
-    let b = Bot1::new(1);
-    let c = Bot2::new(2);
-    let d = Bot2::new(3);
-    //let mut bots = [a];
-    let mut bots: [Box<Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
-    let names: Vec<String> = bots.iter().enumerate()
-        .map(|(k, _)| ((('A' as u8) + (k as u8)) as char).to_string())
-        .collect();
-
-    let logger = |gs: &GameState| {
-        if gs.stats.iteration > 0 {
-            println!("{}", prettify_game_state(gs, true, true));
-            thread::sleep(Duration::from_millis(10));
-        }
-    };
-    for _ in 0..100 {
-        // run match
-        let match_k_seed = (*random).borrow_mut().next_u64();
-        let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
-        let replay_k = run_match(&mut match_k, &mut bots, &logger);
-        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);
-    }
-}
-
-// reset to default color is \e[0m
-// https://misc.flogisoft.com/bash/tip_colors_and_formatting
-// must be at least 10 items
-const COLORS: &'static [&'static str] = &[
-    "\x1B[91m", "\x1B[92m", "\x1B[93m", "\x1B[94m",
-    "\x1B[95m", "\x1B[96m", "\x1B[97m", "\x1B[90m",
-    "\x1B[31m", "\x1B[32m", "\x1B[33m", "\x1B[34m",
-    "\x1B[35m", "\x1B[36m", "\x1B[37m", "\x1B[30m",
-];
-
-
-pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> String {
-    let m = gs.field.m;
-    let n = gs.field.n;
-    let np = gs.players.len();
-    let capacity = if use_colors { m * (8 * n + 1) + 2 } else { m * 2 * (m + n) + 10 * np + 30 };
-    let mut result = String::with_capacity(capacity);
-    let mut layer0 = vec![vec![' ' as u8; n]; m];
-
-    for i in 0..m {
-        for j in 0..n {
-            match gs.field.cells[i][j] {
-                Cell::Empty => layer0[i][j] = '.' as u8,
-                Cell::Border => layer0[i][j] = '*' as u8,
-                Cell::Owned(k) => layer0[i][j] = ('0' as u8) + k,
-            };
-        }
-    }
-    for k in 0..np {
-        let player = gs.players[k].body();
-        for l in 0..player.len() {
-            let i = player[l].0 as usize;
-            let j = player[l].1 as usize;
-            if l == player.len() - 1 {
-                layer0[i][j] = ('A' as u8) + (k as u8);
-            } else {
-                layer0[i][j] = ('a' as u8) + (k as u8);
-            }
-        }
-    }
-    // now build the result string
-    for k in 0..np {
-        let mut s = String::with_capacity(n * 2);
-        s.push_str(&format!("{}: {}", gs.player_names[k], gs.stats.scores[k]));
-        let rest_len = n * 2 - 1 - s.len();
-        for l in 0..rest_len {
-            s.push(' ');
-        }
-        s.push('\n');
-        result.push_str(&s);
-    }
-    for i in 0..m {
-        for j in 0..n {
-            if j != 0 {
-                result.push(' ');
-            }
-            if use_colors && layer0[i][j].is_ascii_digit() {
-                let d = (layer0[i][j] - ('0' as u8)) as usize;
-                result.push_str(COLORS[d]);
-                result.push(layer0[i][j] as char);
-                result.push_str("\x1B[97m");
-            } else {
-                result.push(layer0[i][j] as char);
-            }
-        }
-        result.push('\n');
-    }
-    if rewind {
-        for k in 0..(np + m + 1) {
-            result.push_str("\x1B[A")
-        }
-    }
-    result
-}
-
-fn test_bot_r<R: Rng>(idx: u8, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
-    TestBot::with_index_random(path, idx, rng)
-}
-
-fn game_state(gs: &str) -> GameState {
-    GameState::parse_string(&gs.trim_indent()).unwrap()
-}
+//}
+//
+//fn test_bot_r<R: Rng>(idx: u8, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
+//    TestBot::with_index_random(path, idx, rng)
+//}
+//
+//fn game_state(gs: &str) -> GameState {
+//    GameState::parse_string(&gs.trim_indent()).unwrap()
+//}
