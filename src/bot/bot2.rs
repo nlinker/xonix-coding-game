@@ -7,9 +7,10 @@ use model::Move;
 use model::Point;
 use rand::IsaacRng;
 use rand::prelude::{Rng, FromEntropy};
-use std::cell::RefCell;
+use core::cmp;
 use utils::Bound;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 /// Decartes coordinates, (x, y)
 /// make our own coordinate system, in the name of René Descartes
@@ -74,8 +75,13 @@ impl Bot for Bot2 {
             let mut empties = alg.find_random_empty(20);
             &empties.sort_by_key(|p| distance(cur_head, p));
             // now try to take approximately 5th element
-            let the_empty = &empties.take(100).last();
-            eprintln!("the_empty = {:?}", the_empty);
+            if let Some(the_empty) = &empties[..cmp::min(4, empties.len())].last() {
+                let the_direction = direction(cur_head, the_empty);
+                let path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
+                eprintln!("path = {:?}", path);
+            }
+
+
             Move::Stop
         };
 
@@ -140,6 +146,8 @@ impl<'a> Bot2Alg<'a> {
         let cell = self.cells(&c);
         (cell != Cell::Empty) && may_be_selected(o, a, c)
     }
+
+    // === helpers //
 
     fn cells(&self, p: &P) -> Cell {
         let m = self.gs.field.m;
@@ -206,4 +214,30 @@ fn direction(src: &P, dst: &P) -> Move {
     } else {
         Move::Down
     }
+}
+
+fn build_path(src: &P, dst: &P, horz_first: bool) -> Vec<P> {
+    fn h(y: i16, a: i16, b: i16) -> Vec<P> {
+        if a < b { ((a + 1)..=b).map(|x| P(x, y)).collect() }
+            else if b < a { (b..a).map(|x| P(x, y)).rev().collect() }
+                else { vec![] }
+    }
+    fn v(x: i16, a: i16, b: i16) -> Vec<P> {
+        if a < b { ((a + 1)..=b).map(|y| P(x, y)).collect() }
+            else if b < a { (b..a).map(|y| P(x, y)).rev().collect() }
+                else { vec![] }
+    }
+    let P(xs, ys) = src;
+    let P(xd, yd) = dst;
+    let mut path = vec![];
+    if horz_first {
+        // do ← → then ↑ ↓
+        path.append(&mut h(*ys, *xs, *xd));
+        path.append(&mut v(*xd, *ys, *yd));
+    } else {
+        // do ↑ ↓ then ← →
+        path.append(&mut v(*xs, *ys, *yd));
+        path.append(&mut h(*yd, *xs, *xd));
+    };
+    path
 }
