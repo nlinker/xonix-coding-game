@@ -9,6 +9,7 @@ use rand::IsaacRng;
 use rand::prelude::{Rng, FromEntropy};
 use std::cell::RefCell;
 use utils::Bound;
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct Bot2 {
@@ -20,7 +21,7 @@ pub struct Bot2 {
     last_me: Vec<Point>,
     path: Vec<Point>,
     path_pos: usize,
-    gs: Option<Box<GameState>>,
+    gs: Option<GameState>,
 }
 
 impl Bot for Bot2 {
@@ -32,6 +33,7 @@ impl Bot for Bot2 {
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
+        // self.gs = None;
         self.last_me = self.cur_me.clone();
         self.cur_me = gs.players[self.idx].body().iter().map(|p| self.to_decartes(p)).collect();
         if self.cur_me.is_empty() {
@@ -77,13 +79,13 @@ impl Bot2 {
             last_me: vec![],
             path: vec![],
             path_pos: 0,
-            gs: None
+            gs: None,
         }
     }
 
     /// Note: Decartes coordinates to accept
     fn cells(&self, p: &Point) -> Cell {
-        let gs = &self.gs.unwrap();
+        let gs = self.gs.as_ref().unwrap();
         let from_decartes_x = |x: i16| x as usize;
         let from_decartes_y = |y: i16| gs.field.m - 1 - (y as usize);
         gs.field.cells[from_decartes_y(p.1)][from_decartes_x(p.0)]
