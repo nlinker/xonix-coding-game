@@ -143,31 +143,31 @@ impl Bot1 {
         None
     }
 
-    fn find_closest(&self, src: Point, predicate: impl Fn(&Point) -> bool) -> Option<Point> {
-        let m = self.m as i16;
-        let n = self.n as i16;
-        let Point(oi, oj) = src;
-        let bounded = |p: &Point| {
-            let Point(i, j) = *p;
-            if 0 <= i && i < m && 0 <= j && j < n { *p }
-                else { Point(i.bound(0, m - 1), j.bound(0, n - 1)) }
-        };
-        for r in 1..(m + n) {
-            for k in 0..r {
-                let ps = [
-                    Point(oi - k, oj + r - k),
-                    Point(oi - r + k, oj - k),
-                    Point(oi + k, oj - r + k),
-                    Point(oi + r - k, oj + k),
-                ];
-                let opt = ps.iter().map(bounded).find(&predicate);
-                if opt.is_some() {
-                    return opt;
-                }
-            }
-        }
-        None
-    }
+//    fn find_closest(&self, src: Point, predicate: impl Fn(&Point) -> bool) -> Option<Point> {
+//        let m = self.m as i16;
+//        let n = self.n as i16;
+//        let Point(oi, oj) = src;
+//        let bounded = |p: &Point| {
+//            let Point(i, j) = *p;
+//            if 0 <= i && i < m && 0 <= j && j < n { *p }
+//                else { Point(i.bound(0, m - 1), j.bound(0, n - 1)) }
+//        };
+//        for r in 1..(m + n) {
+//            for k in 0..r {
+//                let ps = [
+//                    Point(oi - k, oj + r - k),
+//                    Point(oi - r + k, oj - k),
+//                    Point(oi + k, oj - r + k),
+//                    Point(oi + r - k, oj + k),
+//                ];
+//                let opt = ps.iter().map(bounded).find(&predicate);
+//                if opt.is_some() {
+//                    return opt;
+//                }
+//            }
+//        }
+//        None
+//    }
 }
 
 fn select_move(i: i16) -> Move {

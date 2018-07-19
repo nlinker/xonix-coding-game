@@ -25,12 +25,9 @@ use std::borrow::Borrow;
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
 
-/// view
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Cell {
-    Empty,
-    Border,
-    Owned(u8),
+    Empty, Border, Owned(u8)
 }
 
 /// Note `Ord` defined below
