@@ -20,8 +20,9 @@ fn main() {
 //    }
 //    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
     let random = RefCell::new(IsaacRng::new_from_u64(123));
-    let m = 6;
-    let n = 8;
+    let m = 26;
+    let n = 28;
+    let timeout = 30;
 
     let a = Bot1::new(0);
     let b = Bot1::new(1);
@@ -36,7 +37,7 @@ fn main() {
     let logger = |gs: &GameState| {
         if gs.stats.iteration > 0 {
             println!("{}", prettify_game_state(gs, true, true));
-            thread::sleep(Duration::from_millis(10));
+            thread::sleep(Duration::from_millis(timeout));
         }
     };
     for _ in 0..100 {

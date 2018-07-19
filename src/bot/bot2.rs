@@ -30,7 +30,7 @@ pub struct Bot2 {
     cur_me: Vec<P>,
     last_me: Vec<P>,
     path: Vec<P>,
-    path_pos: usize,
+    next_head_pos: usize,
 }
 
 struct Bot2Alg<'a> {
@@ -59,30 +59,37 @@ impl Bot for Bot2 {
         // if we were flooded or bitten, then reset the path
         if self.cur_me.len() < self.last_me.len() {
             self.path = vec![];
-            self.path_pos = 0;
+            self.next_head_pos = 0;
+        }
+        if gs.stats.iteration >= 89 && self.idx == 3 {
+            let x = 1;
         }
 
-        let the_move = if !self.path.is_empty() {
-            if self.path_pos < self.path.len() - 1 {
-                self.path_pos += 1;
-            } else {
-                self.path_pos = 0;
-            }
-            let new_head = self.path.first().unwrap();
+        let the_move = if !self.path.is_empty() && self.next_head_pos < self.path.len() {
+            let new_head = &self.path[self.next_head_pos];
+            self.next_head_pos += 1;
             direction(cur_head, new_head)
         } else {
             // generate the new path
             let mut empties = alg.find_random_empty(20);
             &empties.sort_by_key(|p| distance(cur_head, p));
+            // we have a vector of empty cells,
             // now try to take approximately 5th element
             if let Some(the_empty) = &empties[..cmp::min(4, empties.len())].last() {
                 let the_direction = direction(cur_head, the_empty);
-                let path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
-                eprintln!("path = {:?}", path);
+                let mut path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
+                if let Some(border) = alg.find_closest(the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
+                    let horz_first = self.random.borrow_mut().gen();
+                    let mut appendix = build_path(the_empty, &border, horz_first);
+                    path.append(&mut appendix);
+                }
+                self.path = path;
+                let new_head = &self.path[0]; // always exists?
+                self.next_head_pos = 1;
+                direction(cur_head, new_head)
+            } else {
+                Move::Stop
             }
-
-
-            Move::Stop
         };
 
         the_move
@@ -95,7 +102,7 @@ impl<'a> Bot2Alg<'a> {
         self.gs.players[idx].body().iter().rev().map(|p| self.to_decartes(p)).collect()
     }
 
-    fn find_closest(&self, src: P, predicate: impl Fn(&P) -> bool) -> Option<P> {
+    fn find_closest(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
         let P(xs, ys) = src;
         let m = self.gs.field.m as i16;
         let n = self.gs.field.n as i16;
@@ -142,7 +149,7 @@ impl<'a> Bot2Alg<'a> {
 
     /// to close the path we are interested in not any border or owned,
     /// but we need to find such cell, direction to that will not cross our body
-    fn border_or_owned_partial(&self, o: P, a: P, c: P) -> bool {
+    fn border_or_owned_partial(&self, o: &P, a: &P, c: &P) -> bool {
         let cell = self.cells(&c);
         (cell != Cell::Empty) && may_be_selected(o, a, c)
     }
@@ -173,7 +180,7 @@ impl Bot2 {
             cur_me: vec![],
             last_me: vec![],
             path: vec![],
-            path_pos: 0,
+            next_head_pos: 0,
         }
     }
 }
@@ -182,7 +189,7 @@ fn distance(p: &P, q: &P) -> i16 {
     (p.0 - q.0).abs() + (p.1 - q.1).abs()
 }
 
-fn may_be_selected(base: P, arrow: P, cur: P) -> bool {
+fn may_be_selected(base: &P, arrow: &P, cur: &P) -> bool {
     let P(xb, yb) = base;
     let P(xa, ya) = arrow;
     let P(xc, yc) = cur;
@@ -206,13 +213,13 @@ fn direction(src: &P, dst: &P) -> Move {
     let P(sx, sy) = src;
     let P(dx, dy) = dst;
     if dx == sx && dy <= sy {
-        Move::Left
-    } else if dx == sx && dy > sy {
-        Move::Right
-    } else if dx < sx {
-        Move::Up
-    } else {
         Move::Down
+    } else if dx == sx && dy > sy {
+        Move::Up
+    } else if dx < sx {
+        Move::Left
+    } else {
+        Move::Right
     }
 }
 
