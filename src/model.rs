@@ -977,8 +977,8 @@ pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> St
                 let d = (layer0[i][j] - ('0' as u8)) as usize;
                 result.push_str(COLORS[d]);
                 result.push(layer0[i][j] as char);
-//                result.push_str("\x1B[97m");
-                result.push_str("\x1B[30m"); // for debug in clion
+                result.push_str("\x1B[97m");
+//                result.push_str("\x1B[30m"); // for debug in clion
             } else {
                 result.push(layer0[i][j] as char);
             }
