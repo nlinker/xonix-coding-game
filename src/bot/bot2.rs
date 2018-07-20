@@ -51,11 +51,11 @@ impl Bot for Bot2 {
         let alg = Bot2Alg { gs, random: self.random.clone() };
 
         self.last_me = self.cur_me.clone();
-        self.cur_me = alg.player(self.idx);
+        self.cur_me = alg.player_body(self.idx);
         if self.cur_me.is_empty() {
             return Move::Stop;
         }
-        let cur_head = self.cur_me.first().unwrap();
+        let cur_head = self.cur_me.last().unwrap();
         // if we were flooded or bitten, then reset the path
         if self.cur_me.len() < self.last_me.len() {
             self.path = vec![];
@@ -66,13 +66,19 @@ impl Bot for Bot2 {
             if self.path.is_empty() {
                 let x = self.m;
             }
+            if *cur_head == P(19, 6) {
+                let x = self.m;
+            }
             let x = self.m;
         }
 
         let the_move = if !self.path.is_empty() && self.path_idx < self.path.len() {
-            // we maintain the invariant that
             let new_head = &self.path[self.path_idx];
-            self.path_idx += 1;
+            // in principle we could bump someone's head and the previous move had no effect,
+            // in this case don't advance the position
+            if self.cur_me != self.last_me {
+                self.path_idx += 1;
+            }
             direction(cur_head, new_head)
         } else {
             // generate the new path
@@ -109,9 +115,9 @@ impl Bot for Bot2 {
 }
 
 impl<'a> Bot2Alg<'a> {
-    /// the head is the _first_ element, as opposite to `self.gs.players[idx]`
-    fn player(&self, idx: usize) -> Vec<P> {
-        self.gs.players[idx].body().iter().rev().map(|p| self.to_decartes(p)).collect()
+    /// the head is the _last_ element, similar to `self.gs.players[idx]`
+    fn player_body(&self, idx: usize) -> Vec<P> {
+        self.gs.players[idx].body().iter().map(|p| self.to_decartes(p)).collect()
     }
 
     fn find_closest(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
