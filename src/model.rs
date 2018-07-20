@@ -691,7 +691,7 @@ pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
         }
     } else if new_head != old_head && old_cell != Cell::Empty {
         // we stay on the nonempty cell
-        // single head, don't make the tail, just setPoint the head
+        // single head, don't make the tail, just set the head
         // otherwise we should have made the contour from the previous step
         if gs.players[index].body().len() > 1 {
             panic!("Broken invariant");
