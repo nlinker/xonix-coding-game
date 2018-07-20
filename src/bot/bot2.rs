@@ -30,7 +30,7 @@ pub struct Bot2 {
     cur_me: Vec<P>,
     last_me: Vec<P>,
     path: Vec<P>,
-    next_head_pos: usize,
+    path_idx: usize,
 }
 
 struct Bot2Alg<'a> {
@@ -59,15 +59,20 @@ impl Bot for Bot2 {
         // if we were flooded or bitten, then reset the path
         if self.cur_me.len() < self.last_me.len() {
             self.path = vec![];
-            self.next_head_pos = 0;
-        }
-        if gs.stats.iteration >= 89 && self.idx == 3 {
-            let x = 1;
+            self.path_idx = 0;
         }
 
-        let the_move = if !self.path.is_empty() && self.next_head_pos < self.path.len() {
-            let new_head = &self.path[self.next_head_pos];
-            self.next_head_pos += 1;
+        if self.idx == 3 {
+            if self.path.is_empty() {
+                let x = self.m;
+            }
+            let x = self.m;
+        }
+
+        let the_move = if !self.path.is_empty() && self.path_idx < self.path.len() {
+            // we maintain the invariant that
+            let new_head = &self.path[self.path_idx];
+            self.path_idx += 1;
             direction(cur_head, new_head)
         } else {
             // generate the new path
@@ -75,7 +80,7 @@ impl Bot for Bot2 {
             &empties.sort_by_key(|p| distance(cur_head, p));
             // we have a vector of empty cells,
             // now try to take approximately 5th element
-            if let Some(the_empty) = &empties[..cmp::min(4, empties.len())].last() {
+            if let Some(the_empty) = empties[..cmp::min(4, empties.len())].last() {
                 let the_direction = direction(cur_head, the_empty);
                 let mut path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
                 if let Some(border) = alg.find_closest(the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
@@ -84,10 +89,17 @@ impl Bot for Bot2 {
                     path.append(&mut appendix);
                 }
                 self.path = path;
-                let new_head = &self.path[0]; // always exists?
-                self.next_head_pos = 1;
-                direction(cur_head, new_head)
+                if self.path.is_empty() {
+                    self.path_idx = 0;
+                    Move::Stop
+                } else {
+                    // path is non-empty
+                    let new_head = &self.path[0];
+                    self.path_idx = 1;
+                    direction(cur_head, new_head)
+                }
             } else {
+                // we couldn't find an empty destination this time
                 Move::Stop
             }
         };
@@ -180,7 +192,7 @@ impl Bot2 {
             cur_me: vec![],
             last_me: vec![],
             path: vec![],
-            next_head_pos: 0,
+            path_idx: 0,
         }
     }
 }

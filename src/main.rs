@@ -28,7 +28,7 @@ fn main() {
     let b = Bot1::new(1);
     let c = Bot2::new(2);
     let d = Bot2::new(3);
-    //let mut bots = [a];
+//    let mut bots: [Box<dyn Bot>; 1] = [Box::new(d)];
     let mut bots: [Box<dyn Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
     let names: Vec<String> = bots.iter().enumerate()
         .map(|(k, _)| ((('A' as u8) + (k as u8)) as char).to_string())
@@ -40,7 +40,7 @@ fn main() {
             thread::sleep(Duration::from_millis(timeout));
         }
     };
-    for _ in 0..100 {
+    for it in 0..100 {
         // run match
         let match_k_seed = random.borrow_mut().next_u64();
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));

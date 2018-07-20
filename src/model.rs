@@ -978,7 +978,7 @@ pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> St
                 result.push_str(COLORS[d]);
                 result.push(layer0[i][j] as char);
 //                result.push_str("\x1B[97m");
-                result.push_str("\x1B[30m");
+                result.push_str("\x1B[30m"); // for debug in clion
             } else {
                 result.push(layer0[i][j] as char);
             }

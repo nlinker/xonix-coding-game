@@ -26,14 +26,6 @@ impl<R: Rng> TestBot<R> {
         let path = s.as_bytes().to_vec();
         TestBot { path, iter: 0, idx: Some(idx), random: Some(rng) }
     }
-    pub fn name(&self) -> String {
-//        self.idx.map(|id| {
-//            let ch = (('A' as u8) + id) as char;
-//            format!("{}: {}", ch, from_utf8(&self.path).unwrap())
-//        }).unwrap_or_else(|| format!("_: {}", from_utf8(&self.path).unwrap()))
-        self.idx.map(|id| format!("{}", ((('A' as u8) + id) as char).to_string()))
-            .unwrap_or_else(|| "?".to_string())
-    }
 }
 
 impl<R: Rng> Bot for TestBot<R> {

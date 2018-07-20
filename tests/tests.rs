@@ -178,6 +178,57 @@ fn test_select_respawn() {
 }
 
 #[test]
+fn test_bite_other() {
+    let gs0 = game_state(r#"
+        *.*.*.*B*.*.*.
+        *. . . . . .*.
+        *A . . . . .*.
+        *. . . . . .*.
+        *.*.*.*.*.*.*C
+    "#);
+    let a = test_bot("rrrr");
+    let b = test_bot("dddd");
+    let c = test_bot("");
+    let gs1 = play(&gs0, &mut [a, b, c]);
+    let mut gs_exp = game_state(r#"
+        *.*.*.*.*.*.*.
+        *. . . . . .*.
+        *. a a A . .*.
+        *. . . . . .*B
+        *.*.*.*.*.*.*C
+    "#);
+    gs_exp.stats.bite_count = 1;
+    gs_exp.stats.iteration = 4;
+    gs_exp.stats.head_to_head_count = 2;
+    assert_eq!(gs_exp, gs1);
+}
+
+#[test]
+fn test_bite_self() {
+    let gs0 = game_state(r#"
+        *A*.*.*.*.*.*.
+        *. . . . . .*.
+        *. . . . . .*.
+        *. . . . . .*.
+        *.*.*.*.*.*.*B
+    "#);
+    let a = test_bot("drrrrddlluu");
+    let b = test_bot("");
+    let gs1 = play(&gs0, &mut [a, b]);
+    let mut gs_exp = game_state(r#"
+        *A*.*.*.*.*.*.
+        *. . . . . .*.
+        *. . . . . .*.
+        *. . . . . .*.
+        *.*.*.*.*.*.*B
+    "#);
+    gs_exp.stats.ouroboros_count = 1;
+    gs_exp.stats.iteration = 11;
+    assert_eq!(gs_exp.stats, gs1.stats);
+    assert_eq!(gs_exp.to_string(), gs1.to_string());
+}
+
+#[test]
 fn test_run_match_with_reordering() {
     let match_seed = Some(69);
     let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
@@ -186,8 +237,8 @@ fn test_run_match_with_reordering() {
     let b = test_bot_r(1, random.clone(), "llurr");
     let c = test_bot_r(2, random.clone(), "urd");
     let d = test_bot_r(3, random.clone(), "rrrdlll");
-    let mut bots = [a, b, c, d];
-    let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
+    let mut bots: [Box<dyn Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
+    let names = make_bot_names(&bots);
 
     let mut the_match = create_match(5, 7, &names, 20, 0.9, match_seed);
     let gs = game_state(r#"
@@ -225,8 +276,8 @@ fn test_run_replay() {
     let b = test_bot_r(1, random.clone(), "luuuu");
     let c = test_bot_r(2, random.clone(), "urrrr");
     let d = test_bot_r(3, random.clone(), "rdddd");
-    let mut bots = [a, b, c, d];
-    let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
+    let mut bots: [Box<dyn Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
+    let names = make_bot_names(&bots);
     let logger = |_gs: &GameState| {};
     for _ in 0..100 {
         // run match
@@ -247,8 +298,9 @@ fn test_run_tournament() {
     let b = test_bot_r(1, random.clone(), "lur");
     let c = test_bot_r(2, random.clone(), "urd");
     let d = test_bot_r(3, random.clone(), "rdl");
-    let mut bots = [a, b, c, d];
-    let names = bots.iter().map(|bot| bot.name()).collect::<Vec<String>>();
+    let mut bots: [Box<dyn Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
+    let names = make_bot_names(&mut bots);
+
     let logger = |_gs: &GameState| {};
 
     let match_count = 100;
@@ -280,6 +332,21 @@ fn test_run_tournament() {
     assert_eq!(exp66, rgs66);
 }
 
+fn make_bot_names<T>(bots: &[T]) -> Vec<String> {
+    let mut names = vec![];
+    for k in 0..bots.len() {
+        // self.idx.map(|id| {
+        //     let ch = (('A' as u8) + id) as char;
+        //     format!("{}: {}", ch, from_utf8(&self.path).unwrap())
+        // }).unwrap_or_else(|| format!("_: {}", from_utf8(&self.path).unwrap()))
+        let idx = Some(k as u8);
+        let name = idx.map(|id| format!("{}", ((('A' as u8) + id) as char).to_string()))
+            .unwrap_or_else(|| "?".to_string());
+        names.push(name);
+    }
+    names
+}
+
 // === helpers ===
 
 fn game_state(gs: &str) -> GameState {
@@ -293,6 +360,7 @@ fn test_bot(path: &str) -> TestBot<IsaacRng> {
 fn test_bot_r<R: Rng>(idx: u8, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
     TestBot::with_index_random(path, idx, rng)
 }
+
 
 fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
     let mut gs = gs.clone();
