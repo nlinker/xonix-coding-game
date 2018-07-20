@@ -19,9 +19,9 @@ fn main() {
 //        byteorder::LittleEndian::write_u64(&mut b2, 123);
 //    }
 //    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
-    let random = RefCell::new(IsaacRng::new_from_u64(123));
-    let m = 26;
-    let n = 28;
+    let random = RefCell::new(IsaacRng::new_from_u64(234));
+    let m = 32;
+    let n = 48;
     let timeout = 30;
 
     let a = Bot1::new(0);
