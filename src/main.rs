@@ -1,9 +1,11 @@
 extern crate rand;
 extern crate xcg;
+extern crate console;
 
 use rand::IsaacRng;
 use rand::prelude::RngCore;
 use std::cell::RefCell;
+use console::style;
 
 use xcg::model::*;
 use xcg::bot::Bot1;
@@ -12,6 +14,10 @@ use std::thread;
 use std::time::Duration;
 
 fn main() {
+    println!("This is {} neat", style("quite").cyan());
+}
+
+fn main1() {
 //    let mut buf = [0; 16];
 //    {
 //        let (mut b1, mut b2) = buf.split_at_mut(8);
@@ -40,7 +46,7 @@ fn main() {
             thread::sleep(Duration::from_millis(timeout));
         }
     };
-    for it in 0..100 {
+    for _it in 0..100 {
         // run match
         let match_k_seed = random.borrow_mut().next_u64();
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
