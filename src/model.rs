@@ -75,7 +75,7 @@ pub struct GameState {
     pub reordering: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Match {
     pub duration: u32,
     pub ratio: f32,

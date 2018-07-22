@@ -40,10 +40,15 @@ struct Bot2Alg<'a> {
 
 impl Bot for Bot2 {
     fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
+        // must be like self.* = Bot2::new(idx).*;
         self.idx = idx as usize;
+        self.random = Rc::new(RefCell::new(IsaacRng::new_from_u64(seed)));
         self.m = gs.field.m;
         self.n = gs.field.n;
-        self.random = Rc::new(RefCell::new(IsaacRng::new_from_u64(seed)));
+        self.cur_me = vec![];
+        self.last_me = vec![];
+        self.path = vec![];
+        self.path_idx = 0;
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {

@@ -13,11 +13,11 @@ use xcg::bot::Bot2;
 use std::thread;
 use std::time::Duration;
 
-fn main() {
+fn main1() {
     println!("This is {} neat", style("quite").cyan());
 }
 
-fn main1() {
+fn main() {
 //    let mut buf = [0; 16];
 //    {
 //        let (mut b1, mut b2) = buf.split_at_mut(8);
@@ -27,7 +27,7 @@ fn main1() {
 //    let random = Rc::new(RefCell::new(XorShiftRng::from_seed(buf)));
     let random = RefCell::new(IsaacRng::new_from_u64(234));
     let m = 32;
-    let n = 48;
+    let n = 54;
     let timeout = 30;
 
     let a = Bot1::new(0);
@@ -46,11 +46,27 @@ fn main1() {
             thread::sleep(Duration::from_millis(timeout));
         }
     };
-    for _it in 0..100 {
-        // run match
-        let match_k_seed = random.borrow_mut().next_u64();
+
+    let count = 1_000_000;
+    let random = RefCell::new(IsaacRng::new_from_u64(234));
+//    let mut seeds = Vec::with_capacity(count);
+//    for it in 0..count {
+//        let match_k_seed = random.borrow_mut().next_u64();
+//        seeds.push(match_k_seed);
+//    }
+
+    for it in 0..1 {
+//        let match_k_seed = random.borrow_mut().next_u64();
+//        let match_k_seed = seeds[it];
+        let match_k_seed = 12768477609909882769;
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let _replay_k = run_match(&mut match_k, &mut bots, &logger);
-        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);
+//        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);
+        let i = match_k.game_state.stats.iteration;
+        let o = match_k.game_state.stats.ouroboros_count;
+        let b = match_k.game_state.stats.bite_count;
+        let h = match_k.game_state.stats.head_to_head_count;
+        let s = match_k.game_state.stats.scores;
+        println!("{:06}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", it, i, o, b, h, match_k_seed, s[0], s[1], s[2], s[3]);
     }
 }

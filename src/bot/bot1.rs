@@ -24,6 +24,8 @@ impl Bot for Bot1 {
         self.n = gs.field.n;
         self.idx = idx as usize;
         self.random = RefCell::new(IsaacRng::new_from_u64(seed));
+        self.destination = None;
+        self.last_move = Move::Stop;
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
