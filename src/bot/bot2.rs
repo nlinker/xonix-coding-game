@@ -31,11 +31,28 @@ pub struct Bot2 {
     last_me: Vec<P>,
     path: Vec<P>,
     path_idx: usize,
+    stay_count: i32,
 }
 
 struct Bot2Alg<'a> {
     gs: &'a GameState,
     random: Rc<RefCell<IsaacRng>>,
+}
+
+impl Bot2 {
+    pub fn new(idx: u8) -> Self {
+        Bot2 {
+            idx: idx as usize,
+            random: Rc::new(RefCell::new(IsaacRng::from_entropy())),
+            m: 0,
+            n: 0,
+            cur_me: vec![],
+            last_me: vec![],
+            path: vec![],
+            path_idx: 0,
+            stay_count: 0,
+        }
+    }
 }
 
 impl Bot for Bot2 {
@@ -49,6 +66,7 @@ impl Bot for Bot2 {
         self.last_me = vec![];
         self.path = vec![];
         self.path_idx = 0;
+        self.stay_count = 0;
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
@@ -83,6 +101,12 @@ impl Bot for Bot2 {
             // in this case don't advance the position
             if self.cur_me != self.last_me {
                 self.path_idx += 1;
+                self.stay_count = 0;
+            } else {
+                self.stay_count += 1;
+                if self.stay_count > 4 {
+                    // step aside
+                }
             }
             direction(cur_head, new_head)
         } else {
@@ -190,21 +214,6 @@ impl<'a> Bot2Alg<'a> {
         let m = self.gs.field.m as i16;
         let n = self.gs.field.n as i16;
         P(p.1, m - 1 - p.0)
-    }
-}
-
-impl Bot2 {
-    pub fn new(idx: u8) -> Self {
-        Bot2 {
-            idx: idx as usize,
-            random: Rc::new(RefCell::new(IsaacRng::from_entropy())),
-            m: 0,
-            n: 0,
-            cur_me: vec![],
-            last_me: vec![],
-            path: vec![],
-            path_idx: 0,
-        }
     }
 }
 

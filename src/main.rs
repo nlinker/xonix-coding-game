@@ -58,7 +58,7 @@ fn main() {
     for it in 0..1 {
 //        let match_k_seed = random.borrow_mut().next_u64();
 //        let match_k_seed = seeds[it];
-        let match_k_seed = 12768477609909882769;
+        let match_k_seed = 2216562425439805338;
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let _replay_k = run_match(&mut match_k, &mut bots, &logger);
 //        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);
