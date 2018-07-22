@@ -1,6 +1,7 @@
 extern crate rand;
 extern crate xcg;
 extern crate console;
+extern crate crossbeam;
 
 use rand::IsaacRng;
 use rand::prelude::RngCore;
@@ -12,10 +13,6 @@ use xcg::bot::Bot1;
 use xcg::bot::Bot2;
 use std::thread;
 use std::time::Duration;
-
-fn main1() {
-    println!("This is {} neat", style("quite").cyan());
-}
 
 fn main() {
 //    let mut buf = [0; 16];
@@ -49,16 +46,16 @@ fn main() {
 
     let count = 1_000_000;
     let random = RefCell::new(IsaacRng::new_from_u64(234));
-//    let mut seeds = Vec::with_capacity(count);
-//    for it in 0..count {
-//        let match_k_seed = random.borrow_mut().next_u64();
-//        seeds.push(match_k_seed);
-//    }
+    let mut seeds = Vec::with_capacity(count);
+    for it in 0..count {
+        let match_k_seed = random.borrow_mut().next_u64();
+        seeds.push(match_k_seed);
+    }
 
-    for it in 0..1 {
+    for it in 0..100 {
 //        let match_k_seed = random.borrow_mut().next_u64();
-//        let match_k_seed = seeds[it];
-        let match_k_seed = 2216562425439805338;
+//        let match_k_seed = 2216562425439805338;
+        let match_k_seed = seeds[it];
         let mut match_k = create_match(m, n, &names, 1024, 0.9, Some(match_k_seed));
         let _replay_k = run_match(&mut match_k, &mut bots, &logger);
 //        println!("{} {:?}", "\n".repeat(m + names.len()), match_k.game_state.stats);

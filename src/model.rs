@@ -24,6 +24,7 @@ use std::cmp::Ordering;
 use std::borrow::Borrow;
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
+use console::Style;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Cell {
@@ -920,13 +921,35 @@ pub fn run_replay(replay: &Replay, logger: &Fn(&GameState)) -> GameState {
 // reset to default color is \e[0m
 // https://misc.flogisoft.com/bash/tip_colors_and_formatting
 // must be at least 10 items
-const COLORS: &'static [&'static str] = &[
-    "\x1B[91m", "\x1B[92m", "\x1B[93m", "\x1B[94m",
-    "\x1B[95m", "\x1B[96m", "\x1B[97m", "\x1B[90m",
-    "\x1B[31m", "\x1B[32m", "\x1B[33m", "\x1B[34m",
-    "\x1B[35m", "\x1B[36m", "\x1B[37m", "\x1B[30m",
+const STYLES: &'static [&'static str] = &[
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "cyan",
+    "magenta",
+
+    "red.dim",
+    "green.dim",
+    "yellow.dim",
+    "blue.dim",
+    "cyan.dim",
+    "magenta.dim",
+
+    "red.bold",
+    "green.bold",
+    "yellow.bold",
+    "blue.bold",
+    "cyan.bold",
+    "magenta.bold",
 ];
 
+#[derive(PartialEq, Debug)]
+enum Symbol {
+    Digit(usize),
+    Letter,
+    Other
+}
 
 pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> String {
     let m = gs.field.m;
@@ -968,23 +991,54 @@ pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> St
         s.push('\n');
         result.push_str(&s);
     }
-    for i in 0..m {
-        for j in 0..n {
-            if j != 0 {
-                result.push(' ');
+    // write the matrix
+    if use_colors {
+        let styles = STYLES.iter().map(|s| Style::from_dotted_str(s)).collect::<Vec<Style>>();
+        let empty_style = Style::new();
+        let white_bold_style = Style::from_dotted_str("white.bold");
+        let mut current_piece: String = String::with_capacity(n * 4);
+        let mut current_style = &empty_style;
+        let mut prev_symbol = Symbol::Other;
+        for i in 0..m {
+            for j in 0..n {
+                if j != 0 {
+                    current_piece.push(' ');
+                }
+                let cur_symbol = if layer0[i][j].is_ascii_digit() {
+                    Symbol::Digit((layer0[i][j] - ('0' as u8)) as usize)
+                } else if layer0[i][j].is_ascii_uppercase() {
+                    Symbol::Letter
+                } else {
+                    Symbol::Other
+                };
+                if cur_symbol != prev_symbol {
+                    result.push_str(&current_style.apply_to(&current_piece).to_string());
+                    current_piece.clear();
+                }
+                match cur_symbol {
+                    Symbol::Digit(d) => current_style = &styles[d],
+                    Symbol::Letter => current_style = &white_bold_style,
+                    Symbol::Other => current_style = &empty_style,
+                }
+                current_piece.push(layer0[i][j] as char);
+                prev_symbol = cur_symbol;
             }
-            if use_colors && layer0[i][j].is_ascii_digit() {
-                let d = (layer0[i][j] - ('0' as u8)) as usize;
-                result.push_str(COLORS[d]);
-                result.push(layer0[i][j] as char);
-                result.push_str("\x1B[97m");
-//                result.push_str("\x1B[30m"); // for debug in clion
-            } else {
-                result.push(layer0[i][j] as char);
-            }
+            current_piece.push('\n');
+            result.push_str(&current_style.apply_to(&current_piece).to_string());
+            current_piece.clear();
         }
-        result.push('\n');
+    } else {
+        // uncolored case, simple
+        for i in 0..m {
+            for j in 0..n {
+                if j != 0 { result.push(' '); }
+                let c = layer0[i][j] as char;
+                result.push(c);
+            }
+            result.push('\n');
+        }
     }
+
     result.push_str(&format!("iteration: {}\n", gs.stats.iteration));
     if rewind {
         for k in 0..(np + m + 2) {

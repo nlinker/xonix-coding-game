@@ -7,6 +7,7 @@ extern crate itertools;
 extern crate rand;
 extern crate rand_core;
 extern crate regex;
+extern crate console;
 
 pub mod bot;
 pub mod model;
