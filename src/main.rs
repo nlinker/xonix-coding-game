@@ -27,8 +27,8 @@ fn main() {
     let n = 54;
     let timeout = 30;
 
-    let a = Bot1::new(0);
-    let b = Bot1::new(1);
+    let a = Bot2::new(0);
+    let b = Bot2::new(1);
     let c = Bot2::new(2);
     let d = Bot2::new(3);
 //    let mut bots: [Box<dyn Bot>; 1] = [Box::new(d)];

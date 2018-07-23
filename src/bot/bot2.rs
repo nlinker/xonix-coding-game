@@ -32,6 +32,7 @@ pub struct Bot2 {
     path: Vec<P>,
     path_idx: usize,
     stay_count: i32,
+    all: Vec<Vec<P>>,
 }
 
 struct Bot2Alg<'a> {
@@ -51,6 +52,7 @@ impl Bot2 {
             path: vec![],
             path_idx: 0,
             stay_count: 0,
+            all: vec![],
         }
     }
 }
@@ -67,6 +69,7 @@ impl Bot for Bot2 {
         self.path = vec![];
         self.path_idx = 0;
         self.stay_count = 0;
+        self.all = vec![];
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
@@ -74,7 +77,9 @@ impl Bot for Bot2 {
         let alg = Bot2Alg { gs, random: self.random.clone() };
 
         self.last_me = self.cur_me.clone();
-        self.cur_me = alg.player_body(self.idx);
+        let (cur_me, all) = alg.player_bodies(self.idx);
+        self.all = all;
+        self.cur_me = cur_me;
         if self.cur_me.is_empty() {
             return Move::Stop;
         }
@@ -85,18 +90,14 @@ impl Bot for Bot2 {
             self.path_idx = 0;
         }
 
-        if self.idx == 3 {
-            if self.path.is_empty() {
-                let x = self.m;
-            }
-            if *cur_head == P(19, 6) {
-                let x = self.m;
-            }
-            let x = self.m;
+        // if we have found someone near, bite him
+        let radius = self.random.borrow_mut().gen_range(1, 4);
+        if let Some(enemy) = alg.find_enemy_nearby(cur_head, radius) {
+            // change the path so that we will attempt to bite and then return back
         }
 
         let the_move = if !self.path.is_empty() && self.path_idx < self.path.len() {
-            let new_head = &self.path[self.path_idx];
+            let new_head = self.path[self.path_idx];
             // in principle we could bump someone's head and the previous move had no effect,
             // in this case don't advance the position
             if self.cur_me != self.last_me {
@@ -104,11 +105,13 @@ impl Bot for Bot2 {
                 self.stay_count = 0;
             } else {
                 self.stay_count += 1;
-                if self.stay_count > 4 {
-                    // step aside
+                if self.stay_count > 3 {
+                    self.path_idx = 0;
+                    self.stay_count = 0;
+                    self.path.clear();
                 }
             }
-            direction(cur_head, new_head)
+            direction(cur_head, &new_head)
         } else {
             // generate the new path
             let mut empties = alg.find_random_empty(20);
@@ -145,8 +148,13 @@ impl Bot for Bot2 {
 
 impl<'a> Bot2Alg<'a> {
     /// the head is the _last_ element, similar to `self.gs.players[idx]`
-    fn player_body(&self, idx: usize) -> Vec<P> {
-        self.gs.players[idx].body().iter().map(|p| self.to_decartes(p)).collect()
+    fn player_bodies(&self, idx: usize) -> (Vec<P>, Vec<Vec<P>>) {
+        let me = self.gs.players[idx].body().iter().map(|p| self.to_decartes(p)).collect();
+        let mut all: Vec<Vec<P>> = vec![];
+        for k in 0..self.gs.players.len() {
+            all.push(self.gs.players[k].body().iter().map(|p| self.to_decartes(p)).collect())
+        }
+        (me, all)
     }
 
     fn find_closest(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
@@ -199,6 +207,14 @@ impl<'a> Bot2Alg<'a> {
     fn border_or_owned_partial(&self, o: &P, a: &P, c: &P) -> bool {
         let cell = self.cells(&c);
         (cell != Cell::Empty) && may_be_selected(o, a, c)
+    }
+
+    fn find_enemy_nearby(&self, o: &P, radius: i16) -> Option<Point> {
+//        let m = self.gs.field.m;
+//        let from_decartes_x = |x: i16| x as usize;
+//        let from_decartes_y = |y: i16| m - 1 - (y as usize);
+//        let is_enemy = |p: &P| {};
+        None
     }
 
     // === helpers //
