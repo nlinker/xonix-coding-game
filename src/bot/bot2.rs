@@ -76,6 +76,7 @@ impl Bot for Bot2 {
 
         let alg = Bot2Alg { gs, random: self.random.clone() };
 
+        let np = gs.playesr.len();
         self.last_me = self.cur_me.clone();
         let (cur_me, all) = alg.player_bodies(self.idx);
         self.all = all;
@@ -91,7 +92,17 @@ impl Bot for Bot2 {
         }
 
         // if we have found someone near, bite him
-        let radius = self.random.borrow_mut().gen_range(1, 4);
+        let radius = self.random.borrow_mut().gen_range(2, 4);
+        let mut enemy: Option<P> = None;
+        for k in 0..np {
+            if k != self.idx {
+                enemy = find_closest(cur_head, radius, |p| self.all[k].contains(p));
+                if enemy.is_some() {
+                     break;
+                }
+            }
+        }
+
         if let Some(enemy) = alg.find_enemy_nearby(cur_head, radius) {
             // change the path so that we will attempt to bite and then return back
         }
@@ -157,30 +168,10 @@ impl<'a> Bot2Alg<'a> {
         (me, all)
     }
 
-    fn find_closest(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
-        let P(xs, ys) = src;
+    fn find_closest_on_field(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
         let m = self.gs.field.m as i16;
         let n = self.gs.field.n as i16;
-        let bounded = |p: &P| {
-            let P(x, y) = *p;
-            if 0 <= x && x < n && 0 <= y && y < m { *p }
-                else { P(x.bound(0, n - 1), y.bound(0, m - 1)) }
-        };
-        for r in 1..(m + n) {
-            for k in 0..r {
-                let ps = [
-                    P(xs - k, ys + r - k),
-                    P(xs - r + k, ys - k),
-                    P(xs + k, ys - r + k),
-                    P(xs + r - k, ys + k),
-                ];
-                let opt = ps.iter().map(bounded).find(&predicate);
-                if opt.is_some() {
-                    return opt;
-                }
-            }
-        }
-        None
+        find_closest(src, m + n, predicate)
     }
 
     fn find_random(&self, attempts: usize, predicate: impl Fn(&P) -> bool) -> Vec<P> {
@@ -295,4 +286,28 @@ fn build_path(src: &P, dst: &P, horz_first: bool) -> Vec<P> {
         path.append(&mut h(*yd, *xs, *xd));
     };
     path
+}
+
+fn find_closest(src: &P, max: i16, predicate: impl Fn(&P) -> bool) -> Option<P> {
+    let P(xs, ys) = src;
+    let bounded = |p: &P| {
+        let P(x, y) = *p;
+        if 0 <= x && x < n && 0 <= y && y < m { *p }
+            else { P(x.bound(0, n - 1), y.bound(0, m - 1)) }
+    };
+    for r in 1..(m + n) {
+        for k in 0..r {
+            let ps = [
+                P(xs - k, ys + r - k),
+                P(xs - r + k, ys - k),
+                P(xs + k, ys - r + k),
+                P(xs + r - k, ys + k),
+            ];
+            let opt = ps.iter().map(bounded).find(&predicate);
+            if opt.is_some() {
+                return opt;
+            }
+        }
+    }
+    None
 }
