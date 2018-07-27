@@ -18,19 +18,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[test]
-fn test_indent_ops() {
-    let gs0 = r#"
-            aaa
-           bbb
-          ccc
-
-        ddd
-        "#;
-    assert_eq!("    aaa\n   bbb\n  ccc\n\nddd", gs0.trim_indent());
-    assert_eq!(">>>>    aaa\n>>>>   bbb\n>>>>  ccc\n>>>>\n>>>>ddd", gs0.replace_indent(">>>>"));
-}
-
-#[test]
 fn test_border() {
     // test on the different cells sizes
     let field_sizes = vec![(2, 2), (9, 3), (3, 4), (4, 7)];

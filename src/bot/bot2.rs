@@ -1,25 +1,20 @@
-#![allow(unused)]
-
+use bot::common::build_path;
+use bot::common::direction;
+use bot::common::distance;
+use bot::common::find_closest;
+use bot::common::may_be_selected;
+use bot::common::P;
+use core::cmp;
 use model::Bot;
 use model::Cell;
 use model::GameState;
 use model::Move;
 use model::Point;
 use rand::IsaacRng;
-use rand::prelude::{Rng, FromEntropy};
-use core::cmp;
-use utils::Bound;
-use std::rc::Rc;
+use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
-
-/// Decartes coordinates, (x, y)
-/// make our own coordinate system, in the name of René Descartes
-/// ^ y
-/// |
-/// |
-/// +-------> x
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash, PartialOrd)]
-struct P(i16, i16);
+use std::rc::Rc;
+use utils::Bound;
 
 #[derive(Clone, Debug)]
 pub struct Bot2 {
@@ -76,7 +71,9 @@ impl Bot for Bot2 {
 
         let alg = Bot2Alg { gs, random: self.random.clone() };
 
-        let np = gs.playesr.len();
+        let m = gs.field.m as i16;
+        let n = gs.field.n as i16;
+        let np = gs.players.len();
         self.last_me = self.cur_me.clone();
         let (cur_me, all) = alg.player_bodies(self.idx);
         self.all = all;
@@ -96,7 +93,7 @@ impl Bot for Bot2 {
         let mut enemy: Option<P> = None;
         for k in 0..np {
             if k != self.idx {
-                enemy = find_closest(cur_head, radius, |p| self.all[k].contains(p));
+                enemy = find_closest(m, n, cur_head, radius, |p| self.all[k].contains(p));
                 if enemy.is_some() {
                      break;
                 }
@@ -132,7 +129,7 @@ impl Bot for Bot2 {
             if let Some(the_empty) = empties[..cmp::min(4, empties.len())].last() {
                 let the_direction = direction(cur_head, the_empty);
                 let mut path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
-                if let Some(border) = alg.find_closest(the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
+                if let Some(border) = alg.find_closest(m, n, the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
                     let horz_first = self.random.borrow_mut().gen();
                     let mut appendix = build_path(the_empty, &border, horz_first);
                     path.append(&mut appendix);
@@ -171,7 +168,7 @@ impl<'a> Bot2Alg<'a> {
     fn find_closest_on_field(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
         let m = self.gs.field.m as i16;
         let n = self.gs.field.n as i16;
-        find_closest(src, m + n, predicate)
+        find_closest(m, n, src, m + n, predicate)
     }
 
     fn find_random(&self, attempts: usize, predicate: impl Fn(&P) -> bool) -> Vec<P> {
@@ -224,90 +221,4 @@ impl<'a> Bot2Alg<'a> {
     }
 }
 
-fn distance(p: &P, q: &P) -> i16 {
-    (p.0 - q.0).abs() + (p.1 - q.1).abs()
-}
 
-fn may_be_selected(base: &P, arrow: &P, cur: &P) -> bool {
-    let P(xb, yb) = base;
-    let P(xa, ya) = arrow;
-    let P(xc, yc) = cur;
-    // 4 3 2
-    // 5 9 1
-    // 6 7 8
-    if false { false }
-    else if xb == xa && yb < ya { ya <= yc }
-    else if xb > xa && yb < ya  { xc <= xa && ya <= yc }
-    else if xb > xa && yb == ya { xc <= xa }
-    else if xb > xa && yb > ya  { xc <= xa && yc <= ya }
-    else if xb == xa && yb > ya { yc <= ya }
-    else if xb < xa && yb > ya  { xa <= xc && yc <= ya }
-    else if xb < xa && yb == ya { xa <= xc }
-    else if xb < xa && yb < ya  { xa <= xc && ya <= yc }
-    else if xb == xa && yb < ya { ya <= yc }
-    else                        { xa != xc && ya != yc }
-}
-
-fn direction(src: &P, dst: &P) -> Move {
-    let P(sx, sy) = src;
-    let P(dx, dy) = dst;
-    if dx == sx && dy <= sy {
-        Move::Down
-    } else if dx == sx && dy > sy {
-        Move::Up
-    } else if dx < sx {
-        Move::Left
-    } else {
-        Move::Right
-    }
-}
-
-fn build_path(src: &P, dst: &P, horz_first: bool) -> Vec<P> {
-    fn h(y: i16, a: i16, b: i16) -> Vec<P> {
-        if a < b { ((a + 1)..=b).map(|x| P(x, y)).collect() }
-            else if b < a { (b..a).map(|x| P(x, y)).rev().collect() }
-                else { vec![] }
-    }
-    fn v(x: i16, a: i16, b: i16) -> Vec<P> {
-        if a < b { ((a + 1)..=b).map(|y| P(x, y)).collect() }
-            else if b < a { (b..a).map(|y| P(x, y)).rev().collect() }
-                else { vec![] }
-    }
-    let P(xs, ys) = src;
-    let P(xd, yd) = dst;
-    let mut path = vec![];
-    if horz_first {
-        // do ← → then ↑ ↓
-        path.append(&mut h(*ys, *xs, *xd));
-        path.append(&mut v(*xd, *ys, *yd));
-    } else {
-        // do ↑ ↓ then ← →
-        path.append(&mut v(*xs, *ys, *yd));
-        path.append(&mut h(*yd, *xs, *xd));
-    };
-    path
-}
-
-fn find_closest(src: &P, max: i16, predicate: impl Fn(&P) -> bool) -> Option<P> {
-    let P(xs, ys) = src;
-    let bounded = |p: &P| {
-        let P(x, y) = *p;
-        if 0 <= x && x < n && 0 <= y && y < m { *p }
-            else { P(x.bound(0, n - 1), y.bound(0, m - 1)) }
-    };
-    for r in 1..(m + n) {
-        for k in 0..r {
-            let ps = [
-                P(xs - k, ys + r - k),
-                P(xs - r + k, ys - k),
-                P(xs + k, ys - r + k),
-                P(xs + r - k, ys + k),
-            ];
-            let opt = ps.iter().map(bounded).find(&predicate);
-            if opt.is_some() {
-                return opt;
-            }
-        }
-    }
-    None
-}
