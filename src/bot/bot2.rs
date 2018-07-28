@@ -129,7 +129,7 @@ impl Bot for Bot2 {
             if let Some(the_empty) = empties[..cmp::min(4, empties.len())].last() {
                 let the_direction = direction(cur_head, the_empty);
                 let mut path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
-                if let Some(border) = alg.find_closest(m, n, the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
+                if let Some(border) = alg.find_closest_on_field(the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
                     let horz_first = self.random.borrow_mut().gen();
                     let mut appendix = build_path(the_empty, &border, horz_first);
                     path.append(&mut appendix);

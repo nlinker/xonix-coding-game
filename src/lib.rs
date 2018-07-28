@@ -8,6 +8,7 @@ extern crate rand;
 extern crate rand_core;
 extern crate regex;
 extern crate console;
+extern crate priority_queue;
 
 pub mod bot;
 pub mod model;

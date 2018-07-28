@@ -1,8 +1,9 @@
 use model::Move;
 use utils::Bound;
-use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::cmp::Ordering;
+use priority_queue::PriorityQueue;
+use std::collections::HashSet;
 
 /// Decartes coordinates, (x, y)
 /// make our own coordinate system, in the name of René Descartes
@@ -101,37 +102,42 @@ pub fn find_closest(m: i16, n: i16, src: &P, max: i16, predicate: impl Fn(&P) ->
     None
 }
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
-struct Weight {
+const NEIGHBORS: &[P] = &[P(0, -1), P(-1, 0), P(0, 1), P(1, 0)];
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd)]
+struct W {
     f: i32,
     g: i32,
+}
+
+impl Ord for W {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let oth = other.f + other.g;
+        (self.f + self.g).cmp(&oth)
+    }
 }
 
 ///
 pub fn a_star_find(src: &P, dst: &P, cells: impl Fn(&P) -> bool) -> Option<Vec<P>> {
 
-    let mut weight: HashMap<P, Weight> = HashMap::new();
+    let mut queue: PriorityQueue<P, W> = PriorityQueue::new();
+    let mut result: HashSet<P> = HashSet::new();
 
-    let mut queue: BinaryHeap<P> = BinaryHeap::new();
+//    weight[src] = Weight { f: 0, g: 0 };
+//    queue.push(*src);
+//    opened.push(*src, true);
 
-    let mut opened: HashMap<P, bool> = HashMap::new();
-    let mut closed: HashMap<P, bool> = HashMap::new();
-
-    weight[src] = Weight { f: 0, g: 0 };
-    queue.push(*src);
-    opened.push(*src, true);
-
-    // while the open list is not empty
-    while !queue.is_empty() {
-        // pop the position of node which has the minimum `f` value.
-        let node = queue.pop();
-        closed.push(node, true);
-        // if reached the end position, construct the path and return it
-        if node == dst {
-            return backtrace(dst);
-        }
-
-    }
+//    // while the open list is not empty
+//    while !queue.is_empty() {
+//        // pop the position of node which has the minimum `f` value.
+//        let node = queue.pop();
+//        closed.push(node, true);
+//        // if reached the end position, construct the path and return it
+//        if node == dst {
+//            return backtrace(dst);
+//        }
+//
+//    }
     None
 }
 
