@@ -2,7 +2,7 @@
 mod bot1;
 mod bot2;
 mod test_bot;
-mod common;
+pub mod common;
 
 pub use self::bot1::*;
 pub use self::bot2::*;

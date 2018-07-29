@@ -71,9 +71,9 @@ impl Bot for Bot2 {
 
         let alg = Bot2Alg { gs, random: self.random.clone() };
 
-        let m = gs.field.m as i16;
-        let n = gs.field.n as i16;
-        let np = gs.players.len();
+//        let m = gs.field.m as i16;
+//        let n = gs.field.n as i16;
+//        let np = gs.players.len();
         self.last_me = self.cur_me.clone();
         let (cur_me, all) = alg.player_bodies(self.idx);
         self.all = all;
@@ -90,17 +90,17 @@ impl Bot for Bot2 {
 
         // if we have found someone near, bite him
         let radius = self.random.borrow_mut().gen_range(2, 4);
-        let mut enemy: Option<P> = None;
-        for k in 0..np {
-            if k != self.idx {
-                enemy = find_closest(m, n, cur_head, radius, |p| self.all[k].contains(p));
-                if enemy.is_some() {
-                     break;
-                }
-            }
-        }
+//        let mut enemy: Option<P> = None;
+//        for k in 0..np {
+//            if k != self.idx {
+//                enemy = find_closest(m, n, cur_head, radius, |p| self.all[k].contains(p));
+//                if enemy.is_some() {
+//                     break;
+//                }
+//            }
+//        }
 
-        if let Some(enemy) = alg.find_enemy_nearby(cur_head, radius) {
+        if let Some(_enemy) = alg.find_enemy_nearby(cur_head, radius) {
             // change the path so that we will attempt to bite and then return back
         }
 
@@ -197,7 +197,7 @@ impl<'a> Bot2Alg<'a> {
         (cell != Cell::Empty) && may_be_selected(o, a, c)
     }
 
-    fn find_enemy_nearby(&self, o: &P, radius: i16) -> Option<Point> {
+    fn find_enemy_nearby(&self, _o: &P, _radius: i16) -> Option<Point> {
 //        let m = self.gs.field.m;
 //        let from_decartes_x = |x: i16| x as usize;
 //        let from_decartes_y = |y: i16| m - 1 - (y as usize);
@@ -216,7 +216,7 @@ impl<'a> Bot2Alg<'a> {
 
     fn to_decartes(&self, p: &Point) -> P {
         let m = self.gs.field.m as i16;
-        let n = self.gs.field.n as i16;
+        // let n = self.gs.field.n as i16;
         P(p.1, m - 1 - p.0)
     }
 }

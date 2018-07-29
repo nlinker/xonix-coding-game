@@ -32,7 +32,7 @@ pub enum Cell {
 }
 
 /// Note `Ord` defined below
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd)]
 pub struct Point(pub i16, pub i16);
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -111,6 +111,12 @@ pub struct ParseRestResult {
     stats: Option<Stats>,
 }
 
+pub trait Bot {
+    // the bot is mutable
+    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
+    fn do_move(&mut self, gs: &GameState) -> Move;
+}
+
 impl Player {
     pub fn head(&self) -> Option<&Point> {
         // the last element in the vector
@@ -126,12 +132,6 @@ impl Player {
     pub fn body_mut(&mut self) -> &mut Vec<Point> {
         &mut self.0
     }
-}
-
-pub trait Bot {
-    // the bot is mutable
-    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
-    fn do_move(&mut self, gs: &GameState) -> Move;
 }
 
 impl fmt::Debug for Bot {
@@ -156,6 +156,28 @@ impl Ord for Point {
         } else {
             self.1.cmp(&other.1)
         }
+    }
+}
+
+impl fmt::Debug for Point {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_char('(')?;
+        fmt.write_str(&self.0.to_string())?;
+        fmt.write_char(',')?;
+        fmt.write_str(&self.1.to_string())?;
+        fmt.write_char(')')?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_char('(')?;
+        fmt.write_str(&self.0.to_string())?;
+        fmt.write_char(',')?;
+        fmt.write_str(&self.1.to_string())?;
+        fmt.write_char(')')?;
+        Ok(())
     }
 }
 
@@ -442,17 +464,6 @@ impl GameState {
 //        Ok(())
 //    }
 //}
-
-impl fmt::Display for Point {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.write_char('(');
-        fmt.write_str(&self.0.to_string());
-        fmt.write_char(',');
-        fmt.write_str(&self.1.to_string());
-        fmt.write_char(')');
-        Ok(())
-    }
-}
 
 impl FromStr for GameState {
     type Err = ParseError;

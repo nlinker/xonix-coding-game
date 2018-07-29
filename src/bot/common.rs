@@ -1,9 +1,10 @@
 use model::Move;
 use utils::Bound;
-use std::collections::HashMap;
 use std::cmp::Ordering;
 use priority_queue::PriorityQueue;
 use std::collections::HashSet;
+use std::fmt;
+use std::fmt::Write;
 
 /// Decartes coordinates, (x, y)
 /// make our own coordinate system, in the name of René Descartes
@@ -11,8 +12,30 @@ use std::collections::HashSet;
 /// |
 /// |
 /// +-------> x
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd)]
 pub struct P(pub i16, pub i16);
+
+impl fmt::Debug for P {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_char('(')?;
+        fmt.write_str(&self.0.to_string())?;
+        fmt.write_char(',')?;
+        fmt.write_str(&self.1.to_string())?;
+        fmt.write_char(')')?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for P {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_char('(')?;
+        fmt.write_str(&self.0.to_string())?;
+        fmt.write_char(',')?;
+        fmt.write_str(&self.1.to_string())?;
+        fmt.write_char(')')?;
+        Ok(())
+    }
+}
 
 pub fn distance(p: &P, q: &P) -> i16 {
     (p.0 - q.0).abs() + (p.1 - q.1).abs()
@@ -85,7 +108,7 @@ pub fn find_closest(m: i16, n: i16, src: &P, max: i16, predicate: impl Fn(&P) ->
         if 0 <= x && x < n && 0 <= y && y < m { *p }
             else { P(x.bound(0, n - 1), y.bound(0, m - 1)) }
     };
-    for r in 1..(m + n) {
+    for r in 1..max {
         for k in 0..r {
             let ps = [
                 P(xs - k, ys + r - k),
@@ -108,20 +131,36 @@ const NEIGHBORS: &[P] = &[P(0, -1), P(-1, 0), P(0, 1), P(1, 0)];
 struct W {
     f: i32,
     g: i32,
+    opened: bool,
+    closed: bool,
 }
 
 impl Ord for W {
     fn cmp(&self, other: &Self) -> Ordering {
-        let oth = other.f + other.g;
-        (self.f + self.g).cmp(&oth)
+        self.f.cmp(&other.f)
     }
 }
 
 ///
-pub fn a_star_find(src: &P, dst: &P, cells: impl Fn(&P) -> bool) -> Option<Vec<P>> {
-
+pub fn a_star_find(src: &P, dst: &P, _cells: impl Fn(&P) -> bool) -> Option<Vec<P>> {
     let mut queue: PriorityQueue<P, W> = PriorityQueue::new();
-    let mut result: HashSet<P> = HashSet::new();
+    let mut _result: HashSet<P> = HashSet::new();
+    queue.push(*src, W {f: 0, g: 0, opened: true, closed: false});
+
+    // while the open list is not empty
+    while !queue.is_empty() {
+        // pop the position of node which has the minimum `f` value.
+        let mut pair = queue.pop().unwrap();
+        pair.1.closed = true;
+        // if reached the end position, construct the path and return it
+        if pair.0 == *dst {
+            return backtrace(dst);
+        }
+        for n in NEIGHBORS {
+            let p = P((pair.0).0 + n.0, (pair.0).1 + n.1);
+        }
+
+    }
 
 //    weight[src] = Weight { f: 0, g: 0 };
 //    queue.push(*src);
