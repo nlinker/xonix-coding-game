@@ -1,7 +1,10 @@
+#![allow(unused)]
+
 extern crate rand;
 extern crate xcg;
 extern crate console;
 extern crate crossbeam;
+extern crate priority_queue;
 
 use rand::IsaacRng;
 use rand::prelude::RngCore;
@@ -12,7 +15,63 @@ use xcg::bot::Bot2;
 use std::thread;
 use std::time::Duration;
 
+use xcg::utils::Trim;
+use xcg::model::*;
+use xcg::bot::common::{P, a_star_find};
+use xcg::bot::common::distance;
+use priority_queue::PriorityQueue;
+use xcg::bot::common::W;
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 fn main() {
+    let mut gs = game_state(r#"
+        *.*.*.*.*.*.*.*.*.*.*.
+        *. . . . . . . . . .*.
+        *. . . . . . . . . .*.
+        *. . . . a a a . . .*.
+        *. . . . a A a . . .*.
+        *. . . . . . a . . .*.
+        *. . a a a a a . . .*.
+        *. . . . . . . . . .*.
+        *.*.*.*.*.*.*.*.*.*.*.
+    "#);
+    // decartes coordinates
+    let src = P(5, 4);
+    let m = gs.field.m as i16;
+    let n = gs.field.n as i16;
+    let me = gs.players[0].body().iter().map(|p| P(p.1, m - 1 - p.0)).collect::<Vec<P>>();
+    let is_boundary = |p: &P| {
+        let P(x, y) = *p;
+        0 <= y && y < m && 0 <= x && x < n && !me.contains(&p)
+    };
+    let heuristic = |p: &P, q: &P| distance(p, q);
+    let mut logger = |ol: &PriorityQueue<P, W>, cl: &HashSet<P>| {
+        for (k, _) in ol {
+            let P(x, y) = *k;
+            let j = x as usize;
+            let i = (m as usize) - 1 - (y as usize);
+            gs.field.cells[i][j] = Cell::Owned(0);
+        }
+        for p in cl {
+            let P(x, y) = *p;
+            let j = x as usize;
+            let i = (m as usize) - 1 - (y as usize);
+            gs.field.cells[i][j] = Cell::Owned(1);
+        }
+        println!("{}", prettify_game_state(&gs, false, true));
+    };
+
+    let dst = P(9, 1);
+    let path = a_star_find(&src, &dst, is_boundary, heuristic, logger);
+    println!("{:?}", path);
+}
+
+fn game_state(gs: &str) -> GameState {
+    GameState::parse_string(&gs.trim_indent()).unwrap()
+}
+
+fn main1() {
     let random = RefCell::new(IsaacRng::new_from_u64(234));
     let m = 32;
     let n = 54;

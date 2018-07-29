@@ -578,10 +578,11 @@ pub fn border_to_point(height: usize, width: usize, pos: usize) -> Point {
     }
 }
 
+const NEIGHBORS: &[(i16, i16)] = &[(0, -1), (-1, 0), (0, 1), (1, 0)];
+
 pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<Point> {
     let m = field.m as i16;
     let n = field.n as i16;
-    let neighbors = vec![Point(0, -1), Point(-1, 0), Point(0, 1), Point(1, 0)];
 
     // result is the growing set of points describing the filled area
     let mut result: HashSet<Point> = HashSet::new();
@@ -605,7 +606,7 @@ pub fn flood(field: &Field, boundary: &HashSet<Point>, start: Point) -> HashSet<
     while !queue.is_empty() {
         let cur = queue.pop_front().unwrap();
         result.insert(cur);
-        let mut candidates = neighbors.iter()
+        let mut candidates = NEIGHBORS.iter()
             .map(|p| Point(cur.0 + p.0, cur.1 + p.1))
             .filter(|p| in_area(*p, &result) && !queue.contains(p))
             .collect();

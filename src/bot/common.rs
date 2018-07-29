@@ -37,8 +37,8 @@ impl fmt::Display for P {
     }
 }
 
-pub fn distance(p: &P, q: &P) -> i16 {
-    (p.0 - q.0).abs() + (p.1 - q.1).abs()
+pub fn distance(p: &P, q: &P) -> i32 {
+    ((p.0 - q.0).abs() as i32) + ((p.1 - q.1).abs() as i32)
 }
 
 pub fn may_be_selected(base: &P, arrow: &P, cur: &P) -> bool {
@@ -125,14 +125,13 @@ pub fn find_closest(m: i16, n: i16, src: &P, max: i16, predicate: impl Fn(&P) ->
     None
 }
 
-const NEIGHBORS: &[P] = &[P(0, -1), P(-1, 0), P(0, 1), P(1, 0)];
+const NEIGHBORS: &[(i16, i16)] = &[(0, -1), (-1, 0), (0, 1), (1, 0)];
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd)]
-struct W {
-    f: i32,
-    g: i32,
-    opened: bool,
-    closed: bool,
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Debug)]
+pub struct W {
+    // h: f32, // heuristic distance from the end node
+    f: i32, // g + h
+    g: i32, // distance from the starting node
 }
 
 impl Ord for W {
@@ -142,44 +141,57 @@ impl Ord for W {
 }
 
 ///
-pub fn a_star_find(src: &P, dst: &P, _cells: impl Fn(&P) -> bool) -> Option<Vec<P>> {
-    let mut queue: PriorityQueue<P, W> = PriorityQueue::new();
+pub fn a_star_find(src: &P, dst: &P,
+                   is_accessible: impl Fn(&P) -> bool,
+                   heuristic: impl Fn(&P, &P) -> i32,
+                   mut logger: impl FnMut(&PriorityQueue<P, W>, &HashSet<P>) -> ()
+) -> Option<Vec<P>> {
+    let mut open_list: PriorityQueue<P, W> = PriorityQueue::new();
+    let mut closed_list: HashSet<P> = HashSet::new();
     let mut _result: HashSet<P> = HashSet::new();
-    queue.push(*src, W {f: 0, g: 0, opened: true, closed: false});
-
-    // while the open list is not empty
-    while !queue.is_empty() {
-        // pop the position of node which has the minimum `f` value.
-        let mut pair = queue.pop().unwrap();
-        pair.1.closed = true;
-        // if reached the end position, construct the path and return it
-        if pair.0 == *dst {
+    // 1. Take the start node and put it on the open list
+    open_list.push(*src, W {f: 0, g: 0});
+    // 2. While there are nodes in the open list:
+    while !open_list.is_empty() {
+        // 3. Pick the node from the open list having the smallest `f` score.
+        // Put it on the closed list (you don't want to consider it again).
+        let (cur_p, cur_w) = open_list.pop().unwrap();
+        closed_list.insert(cur_p);
+        // 4. if reached the end position, construct the path and return it
+        if cur_p == *dst {
             return backtrace(dst);
         }
-        for n in NEIGHBORS {
-            let p = P((pair.0).0 + n.0, (pair.0).1 + n.1);
+        // 5. For each neighbor (adjacent cell) which isn't in the closed list:
+        //   a. Set its parent to current node.
+        //   b. Calculate `g` score (distance from starting node to this neighbor) and add it to the open list
+        //   c. Calculate `f` score by adding heuristics to the `g` value.
+        let accessible_neigh = NEIGHBORS.iter()
+            .map(|(dx, dy)| P(cur_p.0 + dx, cur_p.1 + dy))
+            .filter(|p| !closed_list.contains(&p) && is_accessible(&p));
+        for np in accessible_neigh {
+            // the neighbour could be already accessible from the different node
+            let g = cur_w.g + if np != cur_p { 1 } else { 0 };
+            let f = g + heuristic(&np, &dst);
+            let mut w_opt = open_list.get_priority(&np).map(|w| w.clone());
+            match w_opt {
+                Some(w) => {
+                    if g < w.g {
+                        // the neighbour can be reached with smaller cost
+                        open_list.change_priority(&np, W { f, g });
+                    };
+                    // otherwise don't touch the neighbour, it will be taken by open_list.pop()
+                },
+                None => {
+                    // the neighbour is the new
+                    open_list.push(np, W { f, g });
+                },
+            };
         }
-
+        logger(&open_list, &closed_list);
     }
-
-//    weight[src] = Weight { f: 0, g: 0 };
-//    queue.push(*src);
-//    opened.push(*src, true);
-
-//    // while the open list is not empty
-//    while !queue.is_empty() {
-//        // pop the position of node which has the minimum `f` value.
-//        let node = queue.pop();
-//        closed.push(node, true);
-//        // if reached the end position, construct the path and return it
-//        if node == dst {
-//            return backtrace(dst);
-//        }
-//
-//    }
     None
 }
 
 pub fn backtrace(dst: &P) -> Option<Vec<P>> {
-    None
+    Some(vec![*dst; 1])
 }
