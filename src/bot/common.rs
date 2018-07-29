@@ -127,16 +127,23 @@ pub fn find_closest(m: i16, n: i16, src: &P, max: i16, predicate: impl Fn(&P) ->
 
 const NEIGHBORS: &[(i16, i16)] = &[(0, -1), (-1, 0), (0, 1), (1, 0)];
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct W {
     // h: f32, // heuristic distance from the end node
     pub f: i32, // g + h
     pub g: i32, // distance from the starting node
 }
 
+impl PartialOrd for W {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.f.cmp(&other.f).reverse())
+    }
+}
+
 impl Ord for W {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.f.cmp(&other.f).reverse()
+        self.partial_cmp(&other)
+            .unwrap_or(self.f.cmp(&other.f))
     }
 }
 
