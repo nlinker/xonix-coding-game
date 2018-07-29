@@ -23,8 +23,40 @@ use priority_queue::PriorityQueue;
 use xcg::bot::common::W;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::cmp::Ordering;
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Debug)]
+struct Q(i32);
+
+impl Ord for Q {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0).reverse()
+    }
+}
 
 fn main() {
+
+    let mut pq = PriorityQueue::new();
+    pq.push("Apples", Q(5));
+    pq.push("Bananas", Q(8));
+    pq.push("Strawberries", Q(23));
+
+    assert_eq!(pq.peek(), Some((&"Apples", &Q(5))));
+
+    pq.change_priority("Strawberries", Q(3));
+    assert_eq!(pq.peek(), Some((&"Strawberries", &Q(3))));
+
+    for (item, _) in pq.into_sorted_iter() {
+        println!("{}", item);
+    }
+
+//    let mut pq: PriorityQueue<P, W> = PriorityQueue::new();
+//    pq.push(P(1,3), W { f: 14, g: 5 });
+//    pq.push(P(3,4), W { f: 12, g: 4 });
+//    pq.push(P(2,4), W { f: 14, g: 5 });
+//    println!("pq = {:?}", pq);
+//    println!("peek = {:?}", pq.peek());
+
     let mut gs = game_state(r#"
         *.*.*.*.*.*.*.*.*.*.*.
         *. . . . . . . . . .*.
@@ -60,9 +92,10 @@ fn main() {
             gs.field.cells[i][j] = Cell::Owned(1);
         }
         println!("{}", prettify_game_state(&gs, false, true));
+        println!("{:?}", ol);
     };
 
-    let dst = P(9, 1);
+    let dst = P(8, 1);
     let path = a_star_find(&src, &dst, is_boundary, heuristic, logger);
     println!("{:?}", path);
 }

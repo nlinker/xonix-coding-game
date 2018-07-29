@@ -14,7 +14,6 @@ use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
 use std::rc::Rc;
-use utils::Bound;
 
 #[derive(Clone, Debug)]
 pub struct Bot2 {

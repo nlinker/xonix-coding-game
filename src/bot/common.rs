@@ -130,13 +130,13 @@ const NEIGHBORS: &[(i16, i16)] = &[(0, -1), (-1, 0), (0, 1), (1, 0)];
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Debug)]
 pub struct W {
     // h: f32, // heuristic distance from the end node
-    f: i32, // g + h
-    g: i32, // distance from the starting node
+    pub f: i32, // g + h
+    pub g: i32, // distance from the starting node
 }
 
 impl Ord for W {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.f.cmp(&other.f)
+        self.f.cmp(&other.f).reverse()
     }
 }
 
@@ -153,6 +153,12 @@ pub fn a_star_find(src: &P, dst: &P,
     open_list.push(*src, W {f: 0, g: 0});
     // 2. While there are nodes in the open list:
     while !open_list.is_empty() {
+
+        if open_list.get(&P(1, 2)).is_some() {
+            let aaa = open_list.peek();
+            println!("peek = {:?}", aaa);
+        }
+        println!("peek = {:?}", open_list.peek());
         // 3. Pick the node from the open list having the smallest `f` score.
         // Put it on the closed list (you don't want to consider it again).
         let (cur_p, cur_w) = open_list.pop().unwrap();
