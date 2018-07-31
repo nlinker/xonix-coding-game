@@ -2,9 +2,9 @@ use model::Move;
 use utils::Bound;
 use std::cmp::Ordering;
 use priority_queue::PriorityQueue;
-use std::collections::HashSet;
 use std::fmt;
 use std::fmt::Write;
+use std::collections::HashMap;
 
 /// Decartes coordinates, (x, y)
 /// make our own coordinate system, in the name of René Descartes
@@ -14,6 +14,18 @@ use std::fmt::Write;
 /// +-------> x
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd)]
 pub struct P(pub i16, pub i16);
+
+impl Ord for P {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.0 < other.0 {
+            Ordering::Less
+        } else if self.0 > other.0 {
+            Ordering::Greater
+        } else {
+            self.1.cmp(&other.1)
+        }
+    }
+}
 
 impl fmt::Debug for P {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -132,6 +144,7 @@ pub struct W {
     // h: f32, // heuristic distance from the end node
     pub f: i32, // g + h
     pub g: i32, // distance from the starting node
+    pub par: P, // the point where we came from
 }
 
 impl PartialOrd for W {
@@ -142,37 +155,29 @@ impl PartialOrd for W {
 
 impl Ord for W {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(&other)
-            .unwrap_or(self.f.cmp(&other.f))
+        // partial_cmp for W is never None
+        self.partial_cmp(&other).unwrap()
     }
 }
 
-///
 pub fn a_star_find(src: &P, dst: &P,
                    is_accessible: impl Fn(&P) -> bool,
                    heuristic: impl Fn(&P, &P) -> i32,
-                   mut logger: impl FnMut(&PriorityQueue<P, W>, &HashSet<P>) -> ()
+                   mut logger: impl FnMut(&PriorityQueue<P, W>, &HashMap<P, P>) -> ()
 ) -> Option<Vec<P>> {
     let mut open_list: PriorityQueue<P, W> = PriorityQueue::new();
-    let mut closed_list: HashSet<P> = HashSet::new();
-    let mut _result: HashSet<P> = HashSet::new();
+    let mut closed_list: HashMap<P, P> = HashMap::new();
     // 1. Take the start node and put it on the open list
-    open_list.push(*src, W {f: 0, g: 0});
+    open_list.push(*src, W {f: 0, g: 0, par: *src});
     // 2. While there are nodes in the open list:
     while !open_list.is_empty() {
-
-        if open_list.get(&P(1, 2)).is_some() {
-            let aaa = open_list.peek();
-            println!("peek = {:?}", aaa);
-        }
-        println!("peek = {:?}", open_list.peek());
         // 3. Pick the node from the open list having the smallest `f` score.
         // Put it on the closed list (you don't want to consider it again).
         let (cur_p, cur_w) = open_list.pop().unwrap();
-        closed_list.insert(cur_p);
+        closed_list.insert(cur_p, cur_w.par);
         // 4. if reached the end position, construct the path and return it
         if cur_p == *dst {
-            return backtrace(dst);
+            return backtrace(&closed_list, *dst);
         }
         // 5. For each neighbor (adjacent cell) which isn't in the closed list:
         //   a. Set its parent to current node.
@@ -180,23 +185,24 @@ pub fn a_star_find(src: &P, dst: &P,
         //   c. Calculate `f` score by adding heuristics to the `g` value.
         let accessible_neigh = NEIGHBORS.iter()
             .map(|(dx, dy)| P(cur_p.0 + dx, cur_p.1 + dy))
-            .filter(|p| !closed_list.contains(&p) && is_accessible(&p));
+            .filter(|p| !closed_list.contains_key(&p) && is_accessible(&p));
         for np in accessible_neigh {
             // the neighbour could be already accessible from the different node
             let g = cur_w.g + if np != cur_p { 1 } else { 0 };
             let f = g + heuristic(&np, &dst);
+            let par = cur_p;
             let mut w_opt = open_list.get_priority(&np).map(|w| w.clone());
             match w_opt {
                 Some(w) => {
                     if g < w.g {
                         // the neighbour can be reached with smaller cost
-                        open_list.change_priority(&np, W { f, g });
+                        open_list.change_priority(&np, W { f, g, par });
                     };
                     // otherwise don't touch the neighbour, it will be taken by open_list.pop()
                 },
                 None => {
                     // the neighbour is the new
-                    open_list.push(np, W { f, g });
+                    open_list.push(np, W { f, g, par });
                 },
             };
         }
@@ -205,6 +211,17 @@ pub fn a_star_find(src: &P, dst: &P,
     None
 }
 
-pub fn backtrace(dst: &P) -> Option<Vec<P>> {
-    Some(vec![*dst; 1])
+pub fn backtrace(closed_list: &HashMap<P, P>, dst: P) -> Option<Vec<P>> {
+    let mut p = dst;
+    let mut result = vec![p];
+    while let Some(parent) = closed_list.get(&p) {
+        result.push(*parent);
+        if p == *parent {
+            // for src we have src.par = src
+            break;
+        }
+        p = *parent;
+    }
+    result.reverse();
+    Some(result)
 }

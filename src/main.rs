@@ -22,7 +22,6 @@ use xcg::bot::common::distance;
 use priority_queue::PriorityQueue;
 use xcg::bot::common::W;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::cmp::Ordering;
 
 fn main() {
@@ -39,6 +38,8 @@ fn main() {
     "#);
     // decartes coordinates
     let src = P(5, 4);
+    let destinations = [P(9, 2), P(8, 3)];
+
     let m = gs.field.m as i16;
     let n = gs.field.n as i16;
     let me = gs.players[0].body().iter().map(|p| P(p.1, m - 1 - p.0)).collect::<Vec<P>>();
@@ -47,26 +48,45 @@ fn main() {
         0 <= y && y < m && 0 <= x && x < n && !me.contains(&p)
     };
     let heuristic = |p: &P, q: &P| distance(p, q);
-    let mut logger = |ol: &PriorityQueue<P, W>, cl: &HashSet<P>| {
-        for (k, _) in ol {
-            let P(x, y) = *k;
-            let j = x as usize;
-            let i = (m as usize) - 1 - (y as usize);
-            gs.field.cells[i][j] = Cell::Owned(0);
-        }
-        for p in cl {
-            let P(x, y) = *p;
-            let j = x as usize;
-            let i = (m as usize) - 1 - (y as usize);
-            gs.field.cells[i][j] = Cell::Owned(1);
-        }
-        println!("{}", prettify_game_state(&gs, false, true));
-        println!("{:?}", ol);
-    };
 
-    let dst = P(9, 2);
-    let path = a_star_find(&src, &dst, is_boundary, heuristic, logger);
-    println!("{:?}", path);
+    for dst in destinations.iter() {
+        for i in 0..gs.field.m {
+            for j in 0..gs.field.n {
+                match gs.field.cells[i][j] {
+                    Cell::Owned(_) => gs.field.cells[i][j] = Cell::Empty,
+                    _ => (),
+                }
+            }
+        }
+        let path = {
+            let mut logger = |ol: &PriorityQueue<P, W>, cl: &HashMap<P, P>| {
+                for (k, _) in ol {
+                    let P(x, y) = *k;
+                    let j = x as usize;
+                    let i = (m as usize) - 1 - (y as usize);
+                    gs.field.cells[i][j] = Cell::Owned(0);
+                }
+                for (p, _) in cl {
+                    let P(x, y) = *p;
+                    let j = x as usize;
+                    let i = (m as usize) - 1 - (y as usize);
+                    gs.field.cells[i][j] = Cell::Owned(1);
+                }
+//            println!("{}", prettify_game_state(&gs, false, true));
+//            println!("{:?}", ol);
+            };
+            a_star_find(&src, &dst, is_boundary, heuristic, logger)
+        };
+        if let Some(path) = path {
+            println!("path = {:?}", path);
+            for P(x, y) in path {
+                let j = x as usize;
+                let i = (m as usize) - 1 - (y as usize);
+                gs.field.cells[i][j] = Cell::Owned(2);
+            }
+            println!("{}", prettify_game_state(&gs, false, true));
+        }
+    }
 }
 
 fn game_state(gs: &str) -> GameState {

@@ -148,7 +148,7 @@ impl Error for ParseError {
 }
 
 impl Ord for Point {
-    fn cmp(&self, other: &Point) -> Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         if self.0 < other.0 {
             Ordering::Less
         } else if self.0 > other.0 {
