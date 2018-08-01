@@ -27,6 +27,7 @@ pub struct Bot2 {
     path_idx: usize,
     stay_count: i32,
     all: Vec<Vec<P>>,
+    chasing: bool, // if the bot is trying to bite someone now
 }
 
 struct Bot2Alg<'a> {
@@ -47,6 +48,7 @@ impl Bot2 {
             path_idx: 0,
             stay_count: 0,
             all: vec![],
+            chasing: false,
         }
     }
 }
@@ -54,22 +56,15 @@ impl Bot2 {
 impl Bot for Bot2 {
     fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
         // must be like self.* = Bot2::new(idx).*;
-        self.idx = idx as usize;
+        *self = Bot2::new(idx);
         self.random = Rc::new(RefCell::new(IsaacRng::new_from_u64(seed)));
         self.m = gs.field.m;
         self.n = gs.field.n;
-        self.cur_me = vec![];
-        self.last_me = vec![];
-        self.path = vec![];
-        self.path_idx = 0;
-        self.stay_count = 0;
-        self.all = vec![];
     }
 
     fn do_move(&mut self, gs: &GameState) -> Move {
 
         let alg = Bot2Alg { gs, random: self.random.clone() };
-
 //        let m = gs.field.m as i16;
 //        let n = gs.field.n as i16;
 //        let np = gs.players.len();
