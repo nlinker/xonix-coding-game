@@ -101,6 +101,7 @@ impl Bot for Bot2 {
             if let Some(enemy) = alg.find_enemy_nearby(&self.all, cur_head, radius) {
                 self.chasing = true;
                 let bite_path = alg.find_safe_path(cur_head, &enemy);
+
                 println!("{:?}", bite_path);
                 // change the path so that we will attempt to bite and then return back
             }

@@ -113,6 +113,33 @@ fn test_a_star() {
     assert_eq!(exp1, gs_paths[1]);
 }
 
+#[test]
+fn test_a_cannot_find() {
+    let gs = game_state(r#"
+        *.*.*.*.*.*.*.*.*.*.
+        *. . . . . . . . .*.
+        *. . a a a a a . .*.
+        *. . A . . . a . .*.
+        *. . a a a a a . .*.
+        *. . . . . . . . .*.
+        *.*.*.*.*.*.*.*.*.*.
+    "#);
+    let m = gs.field.m as i16;
+    let n = gs.field.n as i16;
+    let me = gs.players[0].body().iter().map(|p| P(p.1, m - 1 - p.0)).collect::<Vec<P>>();
+    let is_boundary = |p: &P| {
+        let P(x, y) = *p;
+        0 <= y && y < m && 0 <= x && x < n && !me.contains(&p)
+    };
+    let heuristic = |p: &P, q: &P| distance(p, q);
+    // we are using decartes coordinates, src -> dst
+    let src = P(4, 3);
+    let dst = P(8, 1);
+    let logger: Option<fn(&PriorityQueue<P, Weight>, &HashMap<P, P>)> = None;
+    let path = a_star_find(&src, &dst, is_boundary, heuristic, logger);
+    assert_eq!(path, None);
+}
+
 
 fn game_state(gs: &str) -> GameState {
     GameState::parse_string(&gs.trim_indent()).unwrap()
