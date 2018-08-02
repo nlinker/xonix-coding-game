@@ -94,7 +94,7 @@ fn test_a_star() {
         * 2 2 2 2 2 2 2 . . *
         * * * * * * * * * * *
     "#.trim_indent();
-    let exp0 = format!("A: 0                 \n{}\niteration: 0", exp0);
+    let exp0 = format!("A: 0                 \n{}\niteration: 0\n", exp0);
     assert_eq!(exp0, gs_paths[0]);
 
     // (5,4) -> (9,2)
@@ -109,7 +109,7 @@ fn test_a_star() {
         * . . . . . . . . . *
         * * * * * * * * * * *
     "#.trim_indent();
-    let exp1 = format!("A: 0                 \n{}\niteration: 0", exp1);
+    let exp1 = format!("A: 0                 \n{}\niteration: 0\n", exp1);
     assert_eq!(exp1, gs_paths[1]);
 }
 

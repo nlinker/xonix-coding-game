@@ -80,6 +80,7 @@ impl Bot for Bot2 {
         if self.cur_me.len() < self.last_me.len() {
             self.path = vec![];
             self.path_idx = 0;
+            self.chasing = false;
         }
 
         // if we have found someone near, bite him
