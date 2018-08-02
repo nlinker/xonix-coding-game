@@ -98,7 +98,7 @@ impl Bot for Bot2 {
         // if we have found someone near, bite him
         if !self.chasing {
             let radius = self.random.borrow_mut().gen_range(4, 6);
-            if let Some(enemy) = alg.find_enemy_nearby(&self.all, cur_head, radius) {
+            if let Some(enemy) = alg.find_enemy_nearby(cur_head, radius) {
                 self.chasing = true;
                 let bite_path = alg.find_safe_path(cur_head, &enemy);
 
@@ -205,7 +205,7 @@ impl<'a> Bot2Alg<'a> {
         (cell != Cell::Empty) && may_be_selected(o, a, c)
     }
 
-    fn find_enemy_nearby(&self, all: &Vec<Vec<P>>, cur_head: &P, radius: i16) -> Option<P> {
+    fn find_enemy_nearby(&self, cur_head: &P, radius: i16) -> Option<P> {
         let mut enemy: Option<P> = None;
         let np = self.gs.players.len();
         let m = self.gs.field.m as i16;
@@ -213,8 +213,8 @@ impl<'a> Bot2Alg<'a> {
         for k in 0..np {
             if k != self.idx {
                 enemy = find_closest(m, n, cur_head, radius, |p| {
-                    let k_len = all[k].len();
-                    k_len > 1 && all[k][0..k_len-2].contains(p)
+                    let k_len = self.all[k].len();
+                    k_len > 1 && self.all[k][0..k_len-2].contains(p)
                 });
                 if enemy.is_some() {
                     break;
