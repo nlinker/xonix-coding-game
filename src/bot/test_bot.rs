@@ -1,19 +1,18 @@
 extern crate rand;
 
+use model::Bot;
+use model::Move;
+use model::PlayerGameState;
 use rand::prelude::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
-
-use model::Bot;
-use model::GameState;
-use model::Move;
 
 // TODO move it to ../tests/test_bot.rs
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct TestBot<R: Rng> {
     path: Vec<u8>,
     iter: u32,
-    idx: Option<u8>,
+    idx: Option<usize>,
     random: Option<Rc<RefCell<R>>>,
 }
 
@@ -22,7 +21,7 @@ impl<R: Rng> TestBot<R> {
         let path = s.as_bytes().to_vec();
         TestBot { path, iter: 0, idx: None, random: None }
     }
-    pub fn with_index_random(s: &str, idx: u8, rng: Rc<RefCell<R>>) -> TestBot<R> {
+    pub fn with_index_random(s: &str, idx: usize, rng: Rc<RefCell<R>>) -> TestBot<R> {
         let path = s.as_bytes().to_vec();
         TestBot { path, iter: 0, idx: Some(idx), random: Some(rng) }
     }
@@ -30,14 +29,14 @@ impl<R: Rng> TestBot<R> {
 
 impl<R: Rng> Bot for TestBot<R> {
 
-    fn reset(&mut self, _gs: &GameState, idx: u8, _seed: u64) {
+    fn reset(&mut self, _gs: &PlayerGameState, idx: usize, _seed: u64) {
         self.iter = 0;
         self.idx = Some(idx);
         // reset the inner state
         // println!("reset state index={} seed={}", idx, seed)
     }
 
-    fn do_move(&mut self, _gs: &GameState) -> Move {
+    fn do_move(&mut self, _gs: &PlayerGameState) -> Move {
         if self.iter >= self.path.len() as u32 {
             let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
             match self.random {

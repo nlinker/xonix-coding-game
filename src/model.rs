@@ -76,16 +76,22 @@ pub struct GameState {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct PlayerGameState {
-    pub idx: u8,
-    pub field: Field,
-    pub players: Vec<Player>,
+pub struct PlayerGameState<'a> {
+    pub idx: usize,
+    pub field: &'a Field,
+    pub players: Vec<&'a Player>,
 }
+
+//#[derive(Clone, Eq, PartialEq, Debug)]
+//pub struct ClientGameState { pub field: Field }
+
+//#[derive(Clone, Eq, PartialEq, Debug)]
+//pub struct ClientGameStateDelta {}
 
 pub trait Bot {
     // the bot is mutable
-    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
-    fn do_move(&mut self, gs: &GameState) -> Move;
+    fn reset(&mut self, gs: &PlayerGameState, idx: usize, seed: u64);
+    fn do_move(&mut self, gs: &PlayerGameState) -> Move;
 }
 
 #[derive(Clone, Debug)]
@@ -106,12 +112,6 @@ pub struct Replay {
     pub moves: Vec<Vec<Move>>,
     pub random_seed: Option<u64>,
 }
-
-//#[derive(Clone, Eq, PartialEq, Debug)]
-//pub struct ClientGameState { pub field: Field }
-//
-//#[derive(Clone, Eq, PartialEq, Debug)]
-//pub struct ClientGameStateDelta {}
 
 #[derive(Clone, Debug)]
 pub struct ParseError;
@@ -491,6 +491,24 @@ impl fmt::Display for GameState {
     }
 }
 
+pub fn make_client_game_state<'a>(pgs: &mut PlayerGameState<'a>, gs: &'a GameState, idx: usize) {
+    pgs.field = &gs.field;
+    pgs.idx = idx;
+    let np = gs.players.len();
+    let players: Vec<&Player> = Vec::with_capacity(np);
+    for k in 0..np {
+        if k == idx {
+            pgs.players.push(&gs.players[k])
+        } else {
+            let mut pts: Vec<Point> = gs.players[k].body().iter().filter(|p| {
+                let Point(i, j) = **p;
+                gs.field.cells[i as usize][j as usize] == Cell::Empty
+            }).map(|p| *p).collect();
+            pgs.players.push(&Player(pts))
+        }
+    }
+}
+
 pub fn create_default_permutation(np: usize) -> Vec<u8> {
     (0..np).map(|x| x as u8).collect()
 }
@@ -773,10 +791,6 @@ fn calculate_head(field: &Field, old_p: Point, mv: Move) -> Point {
     if has_inside(&field, new_p) { new_p } else { old_p }
 }
 
-pub fn build_player_game_state(pgs: &PlayerGameState, gs: &GameState, idx: usize) {
-
-}
-
 pub fn calculate_respawn(gs: &GameState, dead_idx: usize) -> Option<Point> {
     let np = gs.players.len();
     let mut others = HashSet::new();
@@ -882,7 +896,8 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
     for k in 0..nb {
         let idx = the_match.game_state.reordering[k] as usize;
         let seed: u64 = random_seed_gen();
-        bots[idx].reset(&the_match.game_state, idx as u8, seed);
+        make_client_game_state(pgs, &the_match.game_state, k);
+        bots[idx].reset(pgs, idx, seed);
     }
     for tick in 0..the_match.duration {
         // if the cells has filled enough, do finish

@@ -216,6 +216,26 @@ fn test_bite_self() {
 }
 
 #[test]
+fn test_bot_game_state() {
+    let gs = game_state(r#"
+        *.*.*.*.*.*.*.
+        *.0. A1.1.1.*.
+        *. a a B b2D*.
+        *.3C3.3. .2.*.
+        *.*.* *.*.*.*.
+    "#);
+    let mut pgs = PlayerGameState {
+        idx: 0,
+        field: &gs.field,
+        players: gs.players.iter().map(|p| &p).collect(),
+    };
+    make_client_game_state(&mut pgs, &gs, 0);
+    make_client_game_state(&mut pgs, &gs, 1);
+    make_client_game_state(&mut pgs, &gs, 2);
+    make_client_game_state(&mut pgs, &gs, 3);
+}
+
+#[test]
 fn test_run_match_with_reordering() {
     let match_seed = Some(69);
     let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));

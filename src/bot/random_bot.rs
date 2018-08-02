@@ -1,6 +1,5 @@
 use model::Bot;
 use model::Cell;
-use model::GameState;
 use model::Move;
 use model::Point;
 use rand::IsaacRng;
@@ -20,16 +19,16 @@ pub struct RandomBot {
 }
 
 impl Bot for RandomBot {
-    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
+    fn reset(&mut self, gs: &PlayerGameState, idx: usize, seed: u64) {
         self.m = gs.field.m;
         self.n = gs.field.n;
-        self.idx = idx as usize;
+        self.idx = idx;
         self.random = RefCell::new(IsaacRng::new_from_u64(seed));
         self.destination = None;
         self.last_move = Move::Stop;
     }
 
-    fn do_move(&mut self, gs: &GameState) -> Move {
+    fn do_move(&mut self, gs: &PlayerGameState) -> Move {
         let me = gs.players[self.idx].body();
         if me.is_empty() {
             return Move::Stop
@@ -129,7 +128,7 @@ impl RandomBot {
         (old_head, new_head)
     }
 
-    fn calculate_destination(&self, gs: &GameState, head: Point) -> Option<Point> {
+    fn calculate_destination(&self, gs: &PlayerGameState, head: Point) -> Option<Point> {
         // put several random dots into the field, and the first empty point
         // is our destination
         for _ in 1..16 {
