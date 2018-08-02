@@ -1,18 +1,22 @@
+use bot::common::a_star_find;
 use bot::common::build_path;
 use bot::common::direction;
 use bot::common::distance;
 use bot::common::find_closest;
 use bot::common::may_be_selected;
 use bot::common::P;
+use bot::common::Weight;
 use core::cmp;
 use model::Bot;
 use model::Cell;
 use model::GameState;
 use model::Move;
 use model::Point;
+use priority_queue::PriorityQueue;
 use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -31,7 +35,10 @@ pub struct Bot2 {
 }
 
 struct Bot2Alg<'a> {
+    idx: usize,
     gs: &'a GameState,
+    cur_me: &'a Vec<P>,
+    all: &'a Vec<Vec<P>>,
     random: Rc<RefCell<IsaacRng>>,
 }
 
@@ -64,17 +71,22 @@ impl Bot for Bot2 {
 
     fn do_move(&mut self, gs: &GameState) -> Move {
 
-        let alg = Bot2Alg { gs, random: self.random.clone() };
-//        let m = gs.field.m as i16;
-//        let n = gs.field.n as i16;
-//        let np = gs.players.len();
         self.last_me = self.cur_me.clone();
-        let (cur_me, all) = alg.player_bodies(self.idx);
+        let (cur_me, all) = player_bodies(gs, self.idx);
         self.all = all;
         self.cur_me = cur_me;
         if self.cur_me.is_empty() {
             return Move::Stop;
         }
+
+        let alg = Bot2Alg {
+            gs,
+            idx: self.idx,
+            cur_me: &self.cur_me,
+            all: &self.all,
+            random: self.random.clone()
+        };
+
         let cur_head = self.cur_me.last().unwrap();
         // if we were flooded or bitten, then reset the path
         if self.cur_me.len() < self.last_me.len() {
@@ -84,20 +96,16 @@ impl Bot for Bot2 {
         }
 
         // if we have found someone near, bite him
-        let radius = self.random.borrow_mut().gen_range(2, 4);
-//        let mut enemy: Option<P> = None;
-//        for k in 0..np {
-//            if k != self.idx {
-//                enemy = find_closest(m, n, cur_head, radius, |p| self.all[k].contains(p));
-//                if enemy.is_some() {
-//                     break;
-//                }
-//            }
-//        }
-
-        if let Some(_enemy) = alg.find_enemy_nearby(cur_head, radius) {
-            // change the path so that we will attempt to bite and then return back
+        if !self.chasing {
+            let radius = self.random.borrow_mut().gen_range(4, 6);
+            if let Some(enemy) = alg.find_enemy_nearby(&self.all, cur_head, radius) {
+                self.chasing = true;
+                let bite_path = alg.find_safe_path(cur_head, &enemy);
+                println!("{:?}", bite_path);
+                // change the path so that we will attempt to bite and then return back
+            }
         }
+
 
         let the_move = if !self.path.is_empty() && self.path_idx < self.path.len() {
             let new_head = self.path[self.path_idx];
@@ -150,15 +158,6 @@ impl Bot for Bot2 {
 }
 
 impl<'a> Bot2Alg<'a> {
-    /// the head is the _last_ element, similar to `self.gs.players[idx]`
-    fn player_bodies(&self, idx: usize) -> (Vec<P>, Vec<Vec<P>>) {
-        let me = self.gs.players[idx].body().iter().map(|p| self.to_decartes(p)).collect();
-        let mut all: Vec<Vec<P>> = vec![];
-        for k in 0..self.gs.players.len() {
-            all.push(self.gs.players[k].body().iter().map(|p| self.to_decartes(p)).collect())
-        }
-        (me, all)
-    }
 
     fn find_closest_on_field(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
         let m = self.gs.field.m as i16;
@@ -182,8 +181,16 @@ impl<'a> Bot2Alg<'a> {
     }
 
     /// find a
-    fn find_safe_path() -> Option<Vec<P>> {
-        None
+    fn find_safe_path(&self, src: &P, dst: &P) -> Option<Vec<P>> {
+        let m = self.gs.field.m as i16;
+        let n = self.gs.field.n as i16;
+        let is_boundary = |p: &P| {
+            let P(x, y) = *p;
+            0 <= y && y < m && 0 <= x && x < n && !self.cur_me.contains(&p)
+        };
+        let heuristic = |p: &P, q: &P| distance(p, q);
+        let logger: Option<fn(&PriorityQueue<P, Weight>, &HashMap<P, P>)> = None;
+        a_star_find(&src, &dst, is_boundary, heuristic, logger)
     }
 
     fn find_random_empty(&self, attempts: usize) -> Vec<P> {
@@ -197,15 +204,26 @@ impl<'a> Bot2Alg<'a> {
         (cell != Cell::Empty) && may_be_selected(o, a, c)
     }
 
-    fn find_enemy_nearby(&self, _o: &P, _radius: i16) -> Option<Point> {
-//        let m = self.gs.field.m;
-//        let from_decartes_x = |x: i16| x as usize;
-//        let from_decartes_y = |y: i16| m - 1 - (y as usize);
-//        let is_enemy = |p: &P| {};
-        None
+    fn find_enemy_nearby(&self, all: &Vec<Vec<P>>, cur_head: &P, radius: i16) -> Option<P> {
+        let mut enemy: Option<P> = None;
+        let np = self.gs.players.len();
+        let m = self.gs.field.m as i16;
+        let n = self.gs.field.n as i16;
+        for k in 0..np {
+            if k != self.idx {
+                enemy = find_closest(m, n, cur_head, radius, |p| {
+                    let k_len = all[k].len();
+                    k_len > 1 && all[k][0..k_len-2].contains(p)
+                });
+                if enemy.is_some() {
+                    break;
+                }
+            }
+        }
+        enemy
     }
 
-    // === helpers //
+    // === helpers ===
 
     fn cells(&self, p: &P) -> Cell {
         let m = self.gs.field.m;
@@ -213,12 +231,20 @@ impl<'a> Bot2Alg<'a> {
         let from_decartes_y = |y: i16| m - 1 - (y as usize);
         self.gs.field.cells[from_decartes_y(p.1)][from_decartes_x(p.0)]
     }
-
-    fn to_decartes(&self, p: &Point) -> P {
-        let m = self.gs.field.m as i16;
-        // let n = self.gs.field.n as i16;
-        P(p.1, m - 1 - p.0)
-    }
 }
 
+fn to_decartes(gs: &GameState, p: &Point) -> P {
+    let m = gs.field.m as i16;
+    // let n = gs.field.n as i16;
+    P(p.1, m - 1 - p.0)
+}
 
+/// the head is the _last_ element, similar to `self.gs.players[idx]`
+fn player_bodies(gs: &GameState, idx: usize) -> (Vec<P>, Vec<Vec<P>>) {
+    let me = gs.players[idx].body().iter().map(|p| to_decartes(gs, p)).collect();
+    let mut all: Vec<Vec<P>> = vec![];
+    for k in 0..gs.players.len() {
+        all.push(gs.players[k].body().iter().map(|p| to_decartes(gs, p)).collect())
+    }
+    (me, all)
+}

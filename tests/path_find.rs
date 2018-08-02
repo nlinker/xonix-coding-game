@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use xcg::utils::Trim;
 use xcg::model::*;
-use xcg::bot::common::W;
+use xcg::bot::common::Weight;
 use xcg::bot::common::{P, a_star_find};
 use xcg::bot::common::distance;
 
@@ -52,7 +52,7 @@ fn test_a_star() {
         }
         let path = {
             // use this logger for the debugging
-            let mut _logger = Some(|ol: &PriorityQueue<P, W>, cl: &HashMap<P, P>| {
+            let mut _logger = Some(|ol: &PriorityQueue<P, Weight>, cl: &HashMap<P, P>| {
                 for (k, _) in ol {
                     let P(x, y) = *k;
                     let j = x as usize;
@@ -68,7 +68,7 @@ fn test_a_star() {
                 println!("{}", prettify_game_state(&gs, false, false));
                 println!("{:?}", ol);
             });
-            let mut logger: Option<fn(&PriorityQueue<P, W>, &HashMap<P, P>)> = None;
+            let mut logger: Option<fn(&PriorityQueue<P, Weight>, &HashMap<P, P>)> = None;
             a_star_find(&src, &dst, is_boundary, heuristic, logger)
         };
 

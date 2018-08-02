@@ -19,15 +19,15 @@ use xcg::utils::Trim;
 use xcg::model::*;
 use xcg::bot::common::{P, a_star_find};
 use xcg::bot::common::distance;
-use xcg::bot::common::W;
+use xcg::bot::common::Weight;
 use priority_queue::PriorityQueue;
 use std::collections::HashMap;
 use std::cmp::Ordering;
 
 fn main() {
     let random = RefCell::new(IsaacRng::new_from_u64(234));
-    let m = 32;
-    let n = 54;
+    let m = 8; //32;
+    let n = 10; //54;
     let timeout = 30;
 
     let a = Bot2::new(0);
