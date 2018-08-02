@@ -218,11 +218,11 @@ pub fn backtrace(closed_list: &HashMap<P, P>, dst: P) -> Option<Vec<P>> {
     let mut p = dst;
     let mut result = vec![p];
     while let Some(parent) = closed_list.get(&p) {
-        result.push(*parent);
         if p == *parent {
             // for src we have src.par = src
             break;
         }
+        result.push(*parent);
         p = *parent;
     }
     result.reverse();

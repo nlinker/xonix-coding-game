@@ -99,14 +99,26 @@ impl Bot for Bot2 {
         if !self.chasing {
             let radius = self.random.borrow_mut().gen_range(4, 6);
             if let Some(enemy) = alg.find_enemy_nearby(cur_head, radius) {
-                self.chasing = true;
-                let bite_path = alg.find_safe_path(cur_head, &enemy);
-
-                println!("{:?}", bite_path);
-                // change the path so that we will attempt to bite and then return back
+                if let Some(mut bite_path) = alg.find_safe_path(cur_head, &enemy) {
+                    // we don't need the src in bite_path
+                    bite_path.remove(0);
+                    if !self.path.is_empty() && self.path_idx < self.path.len() {
+                        let n_to_remove = self.path.len() - self.path_idx; // should be >= 0
+                        for _ in 0..n_to_remove {
+                            self.path.remove(self.path_idx);
+                        }
+                        self.path.append(&mut bite_path);
+                        // self.path_idx doesn't change
+                        self.chasing = true;
+                    } else {
+                        self.path.clear();
+                        self.path.append(&mut bite_path);
+                        self.path_idx = 1; // 0th is cur_head
+                        self.chasing = true;
+                    }
+                }
             }
         }
-
 
         let the_move = if !self.path.is_empty() && self.path_idx < self.path.len() {
             let new_head = self.path[self.path_idx];
@@ -133,12 +145,14 @@ impl Bot for Bot2 {
             if let Some(the_empty) = empties[..cmp::min(4, empties.len())].last() {
                 let the_direction = direction(cur_head, the_empty);
                 let mut path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
-                if let Some(border) = alg.find_closest_on_field(the_empty, |ref p| alg.border_or_owned_partial(cur_head, the_empty, p)) {
+                let filtering_fun = |p: &P| alg.border_or_owned_partial(cur_head, the_empty, p);
+                if let Some(border) = alg.find_closest_on_field(the_empty, filtering_fun) {
                     let horz_first = self.random.borrow_mut().gen();
                     let mut appendix = build_path(the_empty, &border, horz_first);
                     path.append(&mut appendix);
                 }
                 self.path = path;
+                self.chasing = false;
                 if self.path.is_empty() {
                     self.path_idx = 0;
                     Move::Stop
