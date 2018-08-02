@@ -180,6 +180,11 @@ impl<'a> Bot2Alg<'a> {
         buf
     }
 
+    /// find a
+    fn find_safe_path() -> Option<Vec<P>> {
+        None
+    }
+
     fn find_random_empty(&self, attempts: usize) -> Vec<P> {
         self.find_random(attempts, |p| self.cells(&p) == Cell::Empty)
     }

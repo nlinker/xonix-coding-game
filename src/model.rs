@@ -1050,11 +1050,11 @@ pub fn prettify_game_state(gs: &GameState, rewind: bool, use_colors: bool) -> St
             result.push('\n');
         }
     }
-
-    result.push_str(&format!("iteration: {}\n", gs.stats.iteration));
+    result.push_str(&format!("iteration: {}", gs.stats.iteration));
     if rewind {
-        for k in 0..(np + m + 2) {
-            result.push_str("\x1B[A")
+        result.push_str("\x1B[H"); // home
+        for k in 0..(np + m + 1) {
+            result.push_str("\x1B[A") // up
         }
     }
     result

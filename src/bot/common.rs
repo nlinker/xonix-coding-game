@@ -160,10 +160,12 @@ impl Ord for W {
     }
 }
 
+
+// for debug you can add
 pub fn a_star_find(src: &P, dst: &P,
                    is_accessible: impl Fn(&P) -> bool,
                    heuristic: impl Fn(&P, &P) -> i32,
-                   mut logger: impl FnMut(&PriorityQueue<P, W>, &HashMap<P, P>) -> ()
+                   mut logger: Option<impl FnMut(&PriorityQueue<P, W>, &HashMap<P, P>) -> ()>,
 ) -> Option<Vec<P>> {
     let mut open_list: PriorityQueue<P, W> = PriorityQueue::new();
     let mut closed_list: HashMap<P, P> = HashMap::new();
@@ -206,7 +208,9 @@ pub fn a_star_find(src: &P, dst: &P,
                 },
             };
         }
-        logger(&open_list, &closed_list);
+        if let Some(ref mut log) = logger {
+            log(&open_list, &closed_list);
+        }
     }
     None
 }
