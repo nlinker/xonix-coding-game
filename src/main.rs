@@ -11,7 +11,7 @@ use rand::prelude::RngCore;
 use std::cell::RefCell;
 
 use xcg::model::*;
-use xcg::bot::Bot2;
+use xcg::bot::KillerBot;
 use std::thread;
 use std::time::Duration;
 
@@ -33,10 +33,10 @@ fn main() {
 //    let n = 54;
     let timeout = 40;
 
-    let a = Bot2::new(0);
-    let b = Bot2::new(1);
-    let c = Bot2::new(2);
-    let d = Bot2::new(3);
+    let a = KillerBot::new(0);
+    let b = KillerBot::new(1);
+    let c = KillerBot::new(2);
+    let d = KillerBot::new(3);
 //    let mut bots: [Box<dyn Bot>; 2] = [Box::new(a), Box::new(b)];
     let mut bots: [Box<dyn Bot>; 4] = [Box::new(a), Box::new(b), Box::new(c), Box::new(d)];
     let names: Vec<String> = bots.iter().enumerate()

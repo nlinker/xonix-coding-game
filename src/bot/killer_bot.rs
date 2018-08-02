@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
-pub struct Bot2 {
+pub struct KillerBot {
     idx: usize,
     random: Rc<RefCell<IsaacRng>>,
     m: usize,
@@ -34,7 +34,7 @@ pub struct Bot2 {
     chasing: bool, // if the bot is trying to bite someone now
 }
 
-struct Bot2Alg<'a> {
+struct KillerBotAlg<'a> {
     idx: usize,
     gs: &'a GameState,
     cur_me: &'a Vec<P>,
@@ -42,9 +42,9 @@ struct Bot2Alg<'a> {
     random: Rc<RefCell<IsaacRng>>,
 }
 
-impl Bot2 {
+impl KillerBot {
     pub fn new(idx: u8) -> Self {
-        Bot2 {
+        KillerBot {
             idx: idx as usize,
             random: Rc::new(RefCell::new(IsaacRng::from_entropy())),
             m: 0,
@@ -60,10 +60,10 @@ impl Bot2 {
     }
 }
 
-impl Bot for Bot2 {
+impl Bot for KillerBot {
     fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
         // must be like self.* = Bot2::new(idx).*;
-        *self = Bot2::new(idx);
+        *self = KillerBot::new(idx);
         self.random = Rc::new(RefCell::new(IsaacRng::new_from_u64(seed)));
         self.m = gs.field.m;
         self.n = gs.field.n;
@@ -79,7 +79,7 @@ impl Bot for Bot2 {
             return Move::Stop;
         }
 
-        let alg = Bot2Alg {
+        let alg = KillerBotAlg {
             gs,
             idx: self.idx,
             cur_me: &self.cur_me,
@@ -172,7 +172,7 @@ impl Bot for Bot2 {
     }
 }
 
-impl<'a> Bot2Alg<'a> {
+impl<'a> KillerBotAlg<'a> {
 
     fn find_closest_on_field(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
         let m = self.gs.field.m as i16;

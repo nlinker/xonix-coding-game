@@ -1,10 +1,10 @@
 
-mod bot1;
-mod bot2;
+mod random_bot;
+mod killer_bot;
 mod test_bot;
 pub mod common;
 
-pub use self::bot1::*;
-pub use self::bot2::*;
+pub use self::random_bot::*;
+pub use self::killer_bot::*;
 pub use self::test_bot::*;
 pub use self::common::*;

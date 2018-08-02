@@ -65,7 +65,6 @@ pub struct Stats {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Player(pub Vec<Point>);
 
-/// _player_names_ is player names
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct GameState {
     pub field: Field,
@@ -74,6 +73,19 @@ pub struct GameState {
     pub origins: Vec<Point>,
     pub stats: Stats,
     pub reordering: Vec<u8>,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct PlayerGameState {
+    pub idx: u8,
+    pub field: Field,
+    pub players: Vec<Player>,
+}
+
+pub trait Bot {
+    // the bot is mutable
+    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
+    fn do_move(&mut self, gs: &GameState) -> Move;
 }
 
 #[derive(Clone, Debug)]
@@ -109,12 +121,6 @@ pub struct ParseRestResult {
     reordering: Option<Vec<u8>>,
     origins: Option<Vec<Point>>,
     stats: Option<Stats>,
-}
-
-pub trait Bot {
-    // the bot is mutable
-    fn reset(&mut self, gs: &GameState, idx: u8, seed: u64);
-    fn do_move(&mut self, gs: &GameState) -> Move;
 }
 
 impl Player {
@@ -765,6 +771,10 @@ fn calculate_head(field: &Field, old_p: Point, mv: Move) -> Point {
     };
     let new_p = Point(i + di, j + dj);
     if has_inside(&field, new_p) { new_p } else { old_p }
+}
+
+pub fn build_player_game_state(pgs: &PlayerGameState, gs: &GameState, idx: usize) {
+
 }
 
 pub fn calculate_respawn(gs: &GameState, dead_idx: usize) -> Option<Point> {

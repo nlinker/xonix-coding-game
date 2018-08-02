@@ -7,9 +7,10 @@ use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
 use utils::Bound;
+use model::PlayerGameState;
 
 #[derive(Clone, Debug)]
-pub struct Bot1 {
+pub struct RandomBot {
     idx: usize,
     random: RefCell<IsaacRng>,
     m: usize,
@@ -18,7 +19,7 @@ pub struct Bot1 {
     last_move: Move,
 }
 
-impl Bot for Bot1 {
+impl Bot for RandomBot {
     fn reset(&mut self, gs: &GameState, idx: u8, seed: u64) {
         self.m = gs.field.m;
         self.n = gs.field.n;
@@ -99,9 +100,9 @@ impl Bot for Bot1 {
     }
 }
 
-impl Bot1 {
+impl RandomBot {
     pub fn new(idx: u8) -> Self {
-        Bot1 {
+        RandomBot {
             idx: idx as usize,
             random: RefCell::new(IsaacRng::from_entropy()),
             m: 0,
@@ -144,32 +145,6 @@ impl Bot1 {
         // cannot choose the destination
         None
     }
-
-//    fn find_closest(&self, src: Point, predicate: impl Fn(&Point) -> bool) -> Option<Point> {
-//        let m = self.m as i16;
-//        let n = self.n as i16;
-//        let Point(oi, oj) = src;
-//        let bounded = |p: &Point| {
-//            let Point(i, j) = *p;
-//            if 0 <= i && i < m && 0 <= j && j < n { *p }
-//                else { Point(i.bound(0, m - 1), j.bound(0, n - 1)) }
-//        };
-//        for r in 1..(m + n) {
-//            for k in 0..r {
-//                let ps = [
-//                    Point(oi - k, oj + r - k),
-//                    Point(oi - r + k, oj - k),
-//                    Point(oi + k, oj - r + k),
-//                    Point(oi + r - k, oj + k),
-//                ];
-//                let opt = ps.iter().map(bounded).find(&predicate);
-//                if opt.is_some() {
-//                    return opt;
-//                }
-//            }
-//        }
-//        None
-//    }
 }
 
 fn select_move(i: i16) -> Move {
