@@ -12,7 +12,6 @@ use rand::IsaacRng;
 
 use std::collections::HashSet;
 use core::iter::FromIterator;
-use std::borrow::Borrow;
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -216,7 +215,7 @@ fn test_bite_self() {
 }
 
 #[test]
-fn test_bot_game_state() {
+fn test_game_state_view() {
     let gs = game_state(r#"
         *.*.*.*.*.*.*.
         *.0. A1.1.1.*.
@@ -224,15 +223,51 @@ fn test_bot_game_state() {
         *.3C3.3. .2.*.
         *.*.* *.*.*.*.
     "#);
-    let mut pgs = GameStateView {
+    let mut gsv = GameStateView {
         idx: 0,
         field: gs.field.clone(),
         players: gs.players.iter().map(|p| p.clone()).collect(),
     };
-    make_game_state_view(&mut pgs, &gs, 0);
-    make_game_state_view(&mut pgs, &gs, 1);
-    make_game_state_view(&mut pgs, &gs, 2);
-    make_game_state_view(&mut pgs, &gs, 3);
+
+    make_game_state_view(&mut gsv, &gs, 0);
+    let exp = r#"
+        *.*.*.*.*.*.*.
+        *.0. A1.1.1.*.
+        *. a a B b2.*.
+        *.3.3.3. .2.*.
+        *.*.*.*.*.*.*.
+    "#.trim_indent();
+    assert_eq!(exp, gsv.to_string());
+
+    make_game_state_view(&mut gsv, &gs, 1);
+    let exp = r#"
+        *.*.*.*.*.*.*.
+        *.0. A1.1.1.*.
+        *. a a B b2.*.
+        *.3.3.3. .2.*.
+        *.*.*.*.*.*.*.
+    "#.trim_indent();
+    assert_eq!(exp, gsv.to_string());
+
+    make_game_state_view(&mut gsv, &gs, 2);
+    let exp = r#"
+        *.*.*.*.*.*.*.
+        *.0. A1.1.1.*.
+        *. a a B b2.*.
+        *.3C3.3. .2.*.
+        *.*.*.*.*.*.*.
+    "#.trim_indent();
+    assert_eq!(exp, gsv.to_string());
+
+    make_game_state_view(&mut gsv, &gs, 3);
+    let exp = r#"
+        *.*.*.*.*.*.*.
+        *.0. A1.1.1.*.
+        *. a a B b2D*.
+        *.3.3.3. .2.*.
+        *.*.*.*.*.*.*.
+    "#.trim_indent();
+    assert_eq!(exp, gsv.to_string());
 }
 
 #[test]
