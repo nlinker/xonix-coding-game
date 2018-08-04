@@ -2,7 +2,7 @@ extern crate rand;
 
 use model::Bot;
 use model::Move;
-use model::PlayerGameState;
+use model::GameStateView;
 use rand::prelude::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -29,14 +29,14 @@ impl<R: Rng> TestBot<R> {
 
 impl<R: Rng> Bot for TestBot<R> {
 
-    fn reset(&mut self, _gs: &PlayerGameState, idx: usize, _seed: u64) {
+    fn reset(&mut self, _gs: &GameStateView, idx: usize, _seed: u64) {
         self.iter = 0;
         self.idx = Some(idx);
         // reset the inner state
         // println!("reset state index={} seed={}", idx, seed)
     }
 
-    fn do_move(&mut self, _gs: &PlayerGameState) -> Move {
+    fn do_move(&mut self, _gs: &GameStateView) -> Move {
         if self.iter >= self.path.len() as u32 {
             let moves = vec![Move::Right, Move::Up, Move::Left, Move::Down];
             match self.random {

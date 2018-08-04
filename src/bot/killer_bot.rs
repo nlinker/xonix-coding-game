@@ -17,7 +17,7 @@ use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use model::PlayerGameState;
+use model::GameStateView;
 
 #[derive(Clone, Debug)]
 pub struct KillerBot {
@@ -36,7 +36,7 @@ pub struct KillerBot {
 
 struct KillerBotAlg<'a> {
     idx: usize,
-    gs: &'a PlayerGameState,
+    gs: &'a GameStateView,
     cur_me: &'a Vec<P>,
     all: &'a Vec<Vec<P>>,
     random: Rc<RefCell<IsaacRng>>,
@@ -61,7 +61,7 @@ impl KillerBot {
 }
 
 impl Bot for KillerBot {
-    fn reset(&mut self, gs: &PlayerGameState, idx: usize, seed: u64) {
+    fn reset(&mut self, gs: &GameStateView, idx: usize, seed: u64) {
         // must be like self.* = Bot2::new(idx).*;
         *self = KillerBot::new(idx);
         self.random = Rc::new(RefCell::new(IsaacRng::new_from_u64(seed)));
@@ -69,7 +69,7 @@ impl Bot for KillerBot {
         self.n = gs.field.n;
     }
 
-    fn do_move(&mut self, gs: &PlayerGameState) -> Move {
+    fn do_move(&mut self, gs: &GameStateView) -> Move {
 
         self.last_me = self.cur_me.clone();
         let (cur_me, all) = player_bodies(gs, self.idx);
@@ -248,14 +248,14 @@ impl<'a> KillerBotAlg<'a> {
     }
 }
 
-fn to_decartes(gs: &PlayerGameState, p: &Point) -> P {
+fn to_decartes(gs: &GameStateView, p: &Point) -> P {
     let m = gs.field.m as i16;
     // let n = gs.field.n as i16;
     P(p.1, m - 1 - p.0)
 }
 
 /// the head is the _last_ element, similar to `self.gs.players[idx]`
-fn player_bodies(gs: &PlayerGameState, idx: usize) -> (Vec<P>, Vec<Vec<P>>) {
+fn player_bodies(gs: &GameStateView, idx: usize) -> (Vec<P>, Vec<Vec<P>>) {
     let me = gs.players[idx].body().iter().map(|p| to_decartes(gs, p)).collect();
     let mut all: Vec<Vec<P>> = vec![];
     for k in 0..gs.players.len() {

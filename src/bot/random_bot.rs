@@ -6,7 +6,7 @@ use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
 use utils::Bound;
-use model::PlayerGameState;
+use model::GameStateView;
 
 #[derive(Clone, Debug)]
 pub struct RandomBot {
@@ -19,7 +19,7 @@ pub struct RandomBot {
 }
 
 impl Bot for RandomBot {
-    fn reset(&mut self, gs: &PlayerGameState, idx: usize, seed: u64) {
+    fn reset(&mut self, gs: &GameStateView, idx: usize, seed: u64) {
         self.m = gs.field.m;
         self.n = gs.field.n;
         self.idx = idx;
@@ -28,7 +28,7 @@ impl Bot for RandomBot {
         self.last_move = Move::Stop;
     }
 
-    fn do_move(&mut self, gs: &PlayerGameState) -> Move {
+    fn do_move(&mut self, gs: &GameStateView) -> Move {
         let me = gs.players[self.idx].body();
         if me.is_empty() {
             return Move::Stop
@@ -128,7 +128,7 @@ impl RandomBot {
         (old_head, new_head)
     }
 
-    fn calculate_destination(&self, gs: &PlayerGameState, head: Point) -> Option<Point> {
+    fn calculate_destination(&self, gs: &GameStateView, head: Point) -> Option<Point> {
         // put several random dots into the field, and the first empty point
         // is our destination
         for _ in 1..16 {

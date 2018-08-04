@@ -66,7 +66,7 @@ pub struct Stats {
 pub struct Player(pub Vec<Point>);
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct PlayerGameState {
+pub struct GameStateView {
     pub idx: usize,
     pub field: Field,
     pub players: Vec<Player>,
@@ -90,8 +90,8 @@ pub struct GameState {
 
 pub trait Bot {
     // the bot is mutable
-    fn reset(&mut self, gs: &PlayerGameState, idx: usize, seed: u64);
-    fn do_move(&mut self, gs: &PlayerGameState) -> Move;
+    fn reset(&mut self, gs: &GameStateView, idx: usize, seed: u64);
+    fn do_move(&mut self, gs: &GameStateView) -> Move;
 }
 
 #[derive(Clone, Debug)]
@@ -187,7 +187,7 @@ impl fmt::Display for Point {
     }
 }
 
-impl PlayerGameState {
+impl GameStateView {
     pub fn format_string(&self) -> String {
         let m = self.field.m;
         let n = self.field.n;
@@ -523,14 +523,14 @@ impl FromStr for GameState {
     }
 }
 
-impl fmt::Debug for PlayerGameState {
+impl fmt::Debug for GameStateView {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_str(&self.format_string());
         Ok(())
     }
 }
 
-impl fmt::Display for PlayerGameState {
+impl fmt::Display for GameStateView {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_str(&self.format_string());
         Ok(())
@@ -550,7 +550,7 @@ impl fmt::Display for GameState {
     }
 }
 
-pub fn make_client_game_state(pgs: &mut PlayerGameState, gs: &GameState, idx: usize) {
+pub fn make_game_state_view(pgs: &mut GameStateView, gs: &GameState, idx: usize) {
     let m = gs.field.m;
     let n = gs.field.n;
     let np = gs.players.len();
@@ -961,7 +961,7 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
     let mut pgss = vec![];
     for k in 0..nb {
         let gs = &the_match.game_state;
-        let pgs = PlayerGameState {
+        let pgs = GameStateView {
             idx: k,
             field: gs.field.clone(),
             players: gs.players.iter().map(|p| p.clone()).collect(),
@@ -972,7 +972,7 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
         let idx = the_match.game_state.reordering[k] as usize;
         let seed: u64 = random_seed_gen();
         let mut cgs = &mut pgss[idx];
-        make_client_game_state(cgs, &the_match.game_state, idx);
+        make_game_state_view(cgs, &the_match.game_state, idx);
         bots[idx].reset(cgs, idx, seed);
     }
     for tick in 0..the_match.duration {
@@ -988,7 +988,7 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
         for k in 0..nb {
             let idx = the_match.game_state.reordering[k] as usize;
             let mut cgs = &mut pgss[idx];
-            make_client_game_state(cgs, &the_match.game_state, idx);
+            make_game_state_view(cgs, &the_match.game_state, idx);
             let m = bots[idx].do_move(cgs);
             step(&mut the_match.game_state, idx, m);
             moves[idx] = m;

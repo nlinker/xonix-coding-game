@@ -224,15 +224,15 @@ fn test_bot_game_state() {
         *.3C3.3. .2.*.
         *.*.* *.*.*.*.
     "#);
-    let mut pgs = PlayerGameState {
+    let mut pgs = GameStateView {
         idx: 0,
         field: gs.field.clone(),
         players: gs.players.iter().map(|p| p.clone()).collect(),
     };
-    make_client_game_state(&mut pgs, &gs, 0);
-    make_client_game_state(&mut pgs, &gs, 1);
-    make_client_game_state(&mut pgs, &gs, 2);
-    make_client_game_state(&mut pgs, &gs, 3);
+    make_game_state_view(&mut pgs, &gs, 0);
+    make_game_state_view(&mut pgs, &gs, 1);
+    make_game_state_view(&mut pgs, &gs, 2);
+    make_game_state_view(&mut pgs, &gs, 3);
 }
 
 #[test]
@@ -376,7 +376,7 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
     // build client views of the game state
     let mut pgss = vec![];
     for k in 0..nb {
-        let pgs = PlayerGameState {
+        let pgs = GameStateView {
             idx: k,
             field: gs.field.clone(),
             players: gs.players.iter().map(|p| p.clone()).collect(),
@@ -387,7 +387,7 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
     for k in 0..bots.len() {
         let idx = gs.reordering[k] as usize;
         let mut cgs = &mut pgss[idx];
-        make_client_game_state(cgs, &gs, idx);
+        make_game_state_view(cgs, &gs, idx);
         bots[idx].reset(cgs, idx, 0u64);
     }
     // iterating
@@ -398,7 +398,7 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
         for k in 0..bots.len() {
             let idx = gs.reordering[k] as usize;
             let mut cgs = &mut pgss[idx];
-            make_client_game_state(cgs, &gs, idx);
+            make_game_state_view(cgs, &gs, idx);
             let mv = bots[idx].do_move(cgs);
             moves.push(mv);
             step(gs.borrow_mut(), idx, mv);
