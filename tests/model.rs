@@ -226,8 +226,8 @@ fn test_bot_game_state() {
     "#);
     let mut pgs = PlayerGameState {
         idx: 0,
-        field: &gs.field,
-        players: gs.players.iter().map(|p| &p).collect(),
+        field: gs.field.clone(),
+        players: gs.players.iter().map(|p| p.clone()).collect(),
     };
     make_client_game_state(&mut pgs, &gs, 0);
     make_client_game_state(&mut pgs, &gs, 1);
@@ -364,19 +364,31 @@ fn test_bot(path: &str) -> TestBot<IsaacRng> {
     TestBot::new(path)
 }
 
-fn test_bot_r<R: Rng>(idx: u8, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
+fn test_bot_r<R: Rng>(idx: usize, rng: Rc<RefCell<R>>, path: &str) -> TestBot<R> {
     TestBot::with_index_random(path, idx, rng)
 }
 
-
 fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
+    let nb = bots.len();
     let mut gs = gs.clone();
     let mut progressing = true;
     let mut iteration = 0;
+    // build client views of the game state
+    let mut pgss = vec![];
+    for k in 0..nb {
+        let pgs = PlayerGameState {
+            idx: k,
+            field: gs.field.clone(),
+            players: gs.players.iter().map(|p| p.clone()).collect(),
+        };
+        pgss.push(pgs);
+    }
     // reset bot's state
     for k in 0..bots.len() {
-        let idx = gs.reordering[k];
-        bots[idx as usize].reset(gs.borrow(), idx, 0u64);
+        let idx = gs.reordering[k] as usize;
+        let mut cgs = pgss[idx];
+        make_client_game_state(&mut cgs, &gs, idx);
+        bots[idx].reset(gs.borrow(), idx, 0u64);
     }
     // iterating
     while progressing {
@@ -384,9 +396,10 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
         iteration += 1;
         let mut moves = vec![];
         for k in 0..bots.len() {
-            let idx = gs.reordering[k];
-            // let cgs = game.make_client_game_state(gs, idx);
-            let mv = bots[idx as usize].do_move(gs.borrow());
+            let idx = gs.reordering[k] as usize;
+            let mut cgs = pgss[idx];
+            make_client_game_state(&mut cgs, &gs, idx);
+            let mv = bots[idx].do_move(cgs);
             moves.push(mv);
             step(gs.borrow_mut(), idx, mv);
         }

@@ -65,7 +65,14 @@ pub struct Stats {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Player(pub Vec<Point>);
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq)]
+pub struct PlayerGameState {
+    pub idx: usize,
+    pub field: Field,
+    pub players: Vec<Player>,
+}
+
+#[derive(Clone, Eq, PartialEq)]
 pub struct GameState {
     pub field: Field,
     pub players: Vec<Player>,
@@ -73,13 +80,6 @@ pub struct GameState {
     pub origins: Vec<Point>,
     pub stats: Stats,
     pub reordering: Vec<u8>,
-}
-
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct PlayerGameState<'a> {
-    pub idx: usize,
-    pub field: &'a Field,
-    pub players: Vec<&'a Player>,
 }
 
 //#[derive(Clone, Eq, PartialEq, Debug)]
@@ -184,6 +184,51 @@ impl fmt::Display for Point {
         fmt.write_str(&self.1.to_string())?;
         fmt.write_char(')')?;
         Ok(())
+    }
+}
+
+impl PlayerGameState {
+    pub fn format_string(&self) -> String {
+        let m = self.field.m;
+        let n = self.field.n;
+        let np = self.players.len();
+        let capacity = m * (2 * n + 1) + 2;
+        let mut result = String::with_capacity(capacity);
+        let mut layer0 = vec![vec![' ' as u8; n]; m];
+        let mut layer1 = vec![vec!['.' as u8; n]; m];
+        for i in 0..m {
+            for j in 0..n {
+                let cell = self.field.cells[i][j];
+                match cell {
+                    Cell::Empty => { layer0[i][j] = ' ' as u8 }
+                    Cell::Border => { layer0[i][j] = '*' as u8 }
+                    Cell::Owned(c) => layer0[i][j] = ('0' as u8) + c,
+                }
+            }
+        }
+        for k in 0..np {
+            let player = &self.players[k].0;
+            let ch = ('A' as u8) + (k as u8);
+            for l in 0..player.len() {
+                let i = player[l].0 as usize;
+                let j = player[l].1 as usize;
+                // if it is the last element == player's head
+                if l == player.len() - 1 {
+                    layer1[i][j] = ch;
+                } else {
+                    layer1[i][j] = ch.to_ascii_lowercase();
+                }
+            }
+        }
+        // now put all the stuff
+        for i in 0..m {
+            for j in 0..n {
+                result.push(layer0[i][j] as char);
+                result.push(layer1[i][j] as char);
+            }
+            result.push('\n');
+        }
+        return result;
     }
 }
 
@@ -478,11 +523,25 @@ impl FromStr for GameState {
     }
 }
 
-//impl fmt::Debug for GameState {
-//    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-//        fmt.write_str(&format!("{}", self))
-//    }
-//}
+impl fmt::Debug for PlayerGameState {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(&self.format_string());
+        Ok(())
+    }
+}
+
+impl fmt::Display for PlayerGameState {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(&self.format_string());
+        Ok(())
+    }
+}
+
+impl fmt::Debug for GameState {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(&format!("{}", self))
+    }
+}
 
 impl fmt::Display for GameState {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -491,20 +550,25 @@ impl fmt::Display for GameState {
     }
 }
 
-pub fn make_client_game_state<'a>(pgs: &mut PlayerGameState<'a>, gs: &'a GameState, idx: usize) {
-    pgs.field = &gs.field;
-    pgs.idx = idx;
+pub fn make_client_game_state(pgs: &mut PlayerGameState, gs: &GameState, idx: usize) {
+    let m = gs.field.m;
+    let n = gs.field.n;
     let np = gs.players.len();
-    let players: Vec<&Player> = Vec::with_capacity(np);
+    pgs.idx = idx;
+    for i in 0..m {
+        for j in 0..n {
+            pgs.field.cells[i][j] = gs.field.cells[i][j]
+        }
+    }
     for k in 0..np {
         if k == idx {
-            pgs.players.push(&gs.players[k])
+            pgs.players[k] = Player(gs.players[k].body().clone());
         } else {
             let mut pts: Vec<Point> = gs.players[k].body().iter().filter(|p| {
                 let Point(i, j) = **p;
                 gs.field.cells[i as usize][j as usize] == Cell::Empty
             }).map(|p| *p).collect();
-            pgs.players.push(&Player(pts))
+            pgs.players[k] = Player(pts)
         }
     }
 }
@@ -893,11 +957,23 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
         .map(|seed| IsaacRng::new_from_u64(seed))
         .unwrap_or_else(|| IsaacRng::from_entropy());
     let mut random_seed_gen = move || rng.next_u64();
+    // build client views of the game state
+    let mut pgss = vec![];
+    for k in 0..nb {
+        let gs = &the_match.game_state;
+        let pgs = PlayerGameState {
+            idx: k,
+            field: gs.field.clone(),
+            players: gs.players.iter().map(|p| p.clone()).collect(),
+        };
+        pgss.push(pgs);
+    }
     for k in 0..nb {
         let idx = the_match.game_state.reordering[k] as usize;
+        let mut cgs = &pgss[idx];
         let seed: u64 = random_seed_gen();
-        make_client_game_state(pgs, &the_match.game_state, k);
-        bots[idx].reset(pgs, idx, seed);
+        make_client_game_state(&mut cgs, &the_match.game_state, idx);
+        bots[idx].reset(&cgs, idx, seed);
     }
     for tick in 0..the_match.duration {
         // if the cells has filled enough, do finish
@@ -911,8 +987,9 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
         // enumerate all the bots, move them
         for k in 0..nb {
             let idx = the_match.game_state.reordering[k] as usize;
-            // let cgs = make_client_game_state(the_match.game_state, idx)
-            let m = bots[idx].do_move(&the_match.game_state);
+            let mut cgs = &pgss[idx];
+            make_client_game_state(&mut cgs, &the_match.game_state, idx);
+            let m = bots[idx].do_move(&pgss[idx]);
             step(&mut the_match.game_state, idx as u8, m);
             moves[idx] = m;
             // is it better to do here?

@@ -36,7 +36,7 @@ pub struct KillerBot {
 
 struct KillerBotAlg<'a> {
     idx: usize,
-    gs: &'a PlayerGameState<'a>,
+    gs: &'a PlayerGameState,
     cur_me: &'a Vec<P>,
     all: &'a Vec<Vec<P>>,
     random: Rc<RefCell<IsaacRng>>,
