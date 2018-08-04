@@ -226,6 +226,7 @@ impl GameStateView {
                 result.push(layer0[i][j] as char);
                 result.push(layer1[i][j] as char);
             }
+            // make sure there is no hanging \n
             if i != m - 1 { result.push('\n'); }
         }
         return result;
