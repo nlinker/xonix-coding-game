@@ -747,8 +747,8 @@ pub fn calculate_flood_area(field: &Field, body: &Vec<Point>) -> Vec<Point> {
     flooded
 }
 
-pub fn step(gs: &mut GameState, idx: u8, mv: Move) {
-    let index = idx as usize;
+pub fn step(gs: &mut GameState, idx: usize, mv: Move) {
+    let index = idx;
     let np = gs.players.len();
 
     let old_head = *gs.players[index].head().expect("Broken invariant");
@@ -970,10 +970,10 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
     }
     for k in 0..nb {
         let idx = the_match.game_state.reordering[k] as usize;
-        let mut cgs = &pgss[idx];
         let seed: u64 = random_seed_gen();
-        make_client_game_state(&mut cgs, &the_match.game_state, idx);
-        bots[idx].reset(&cgs, idx, seed);
+        let mut cgs = &mut pgss[idx];
+        make_client_game_state(cgs, &the_match.game_state, idx);
+        bots[idx].reset(cgs, idx, seed);
     }
     for tick in 0..the_match.duration {
         // if the cells has filled enough, do finish
@@ -987,10 +987,10 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
         // enumerate all the bots, move them
         for k in 0..nb {
             let idx = the_match.game_state.reordering[k] as usize;
-            let mut cgs = &pgss[idx];
-            make_client_game_state(&mut cgs, &the_match.game_state, idx);
-            let m = bots[idx].do_move(&pgss[idx]);
-            step(&mut the_match.game_state, idx as u8, m);
+            let mut cgs = &mut pgss[idx];
+            make_client_game_state(cgs, &the_match.game_state, idx);
+            let m = bots[idx].do_move(cgs);
+            step(&mut the_match.game_state, idx, m);
             moves[idx] = m;
             // is it better to do here?
             // logger(&the_match.game_state);
@@ -1025,7 +1025,7 @@ pub fn run_replay(replay: &Replay, logger: &Fn(&GameState)) -> GameState {
         for k in 0..np {
             let idx = gs.reordering[k] as usize;
             let m = replay.moves[tick][idx];
-            step(&mut gs, idx as u8, m);
+            step(&mut gs, idx, m);
             logger(&gs);
         }
     }

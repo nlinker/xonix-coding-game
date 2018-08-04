@@ -386,9 +386,9 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
     // reset bot's state
     for k in 0..bots.len() {
         let idx = gs.reordering[k] as usize;
-        let mut cgs = pgss[idx];
-        make_client_game_state(&mut cgs, &gs, idx);
-        bots[idx].reset(gs.borrow(), idx, 0u64);
+        let mut cgs = &mut pgss[idx];
+        make_client_game_state(cgs, &gs, idx);
+        bots[idx].reset(cgs, idx, 0u64);
     }
     // iterating
     while progressing {
@@ -397,8 +397,8 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
         let mut moves = vec![];
         for k in 0..bots.len() {
             let idx = gs.reordering[k] as usize;
-            let mut cgs = pgss[idx];
-            make_client_game_state(&mut cgs, &gs, idx);
+            let mut cgs = &mut pgss[idx];
+            make_client_game_state(cgs, &gs, idx);
             let mv = bots[idx].do_move(cgs);
             moves.push(mv);
             step(gs.borrow_mut(), idx, mv);
