@@ -1,3 +1,4 @@
+#![feature(rust_2018_preview)]
 extern crate xcg;
 extern crate priority_queue;
 
