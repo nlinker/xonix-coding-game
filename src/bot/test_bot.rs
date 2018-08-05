@@ -1,8 +1,8 @@
 extern crate rand;
 
-use model::Bot;
-use model::Move;
-use model::GameStateView;
+use crate::model::Bot;
+use crate::model::Move;
+use crate::model::GameStateView;
 use rand::prelude::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;

@@ -1,5 +1,5 @@
-use model::Move;
-use utils::Bound;
+use crate::model::Move;
+use crate::utils::Bound;
 use std::cmp::Ordering;
 use priority_queue::PriorityQueue;
 use std::fmt;
