@@ -1,23 +1,23 @@
-use bot::common::a_star_find;
-use bot::common::build_path;
-use bot::common::direction;
-use bot::common::distance;
-use bot::common::find_closest;
-use bot::common::may_be_selected;
-use bot::common::P;
-use bot::common::Weight;
+use crate::bot::common::a_star_find;
+use crate::bot::common::build_path;
+use crate::bot::common::direction;
+use crate::bot::common::distance;
+use crate::bot::common::find_closest;
+use crate::bot::common::may_be_selected;
+use crate::bot::common::P;
+use crate::bot::common::Weight;
 use core::cmp;
-use model::Bot;
-use model::Cell;
-use model::Move;
-use model::Point;
+use crate::model::Bot;
+use crate::model::Cell;
+use crate::model::Move;
+use crate::model::Point;
 use priority_queue::PriorityQueue;
 use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use model::GameStateView;
+use crate::model::GameStateView;
 
 #[derive(Clone, Debug)]
 pub struct KillerBot {
