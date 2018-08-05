@@ -1,3 +1,4 @@
+#![feature(rust_2018_preview)]
 #![allow(unused)]
 
 extern crate rand;
