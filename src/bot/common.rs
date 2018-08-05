@@ -53,7 +53,7 @@ pub fn distance(p: &P, q: &P) -> i32 {
     ((p.0 - q.0).abs() as i32) + ((p.1 - q.1).abs() as i32)
 }
 
-pub fn may_be_selected(base: &P, arrow: &P, cur: &P) -> bool {
+pub fn may_be_selected(base: P, arrow: P, cur: P) -> bool {
     let P(xb, yb) = base;
     let P(xa, ya) = arrow;
     let P(xc, yc) = cur;

@@ -120,7 +120,8 @@ impl Bot for KillerBot {
             }
         }
 
-        let the_move = if !self.path.is_empty() && self.path_idx < self.path.len() {
+        // calculate the result move
+        if !self.path.is_empty() && self.path_idx < self.path.len() {
             let new_head = self.path[self.path_idx];
             // in principle we could bump someone's head and the previous move had no effect,
             // in this case don't advance the position
@@ -145,7 +146,7 @@ impl Bot for KillerBot {
             if let Some(the_empty) = empties[..cmp::min(4, empties.len())].last() {
                 let the_direction = direction(cur_head, the_empty);
                 let mut path = build_path(cur_head, the_empty, the_direction == Move::Left || the_direction == Move::Right);
-                let filtering_fun = |p: &P| alg.border_or_owned_partial(cur_head, the_empty, p);
+                let filtering_fun = |p: &P| alg.border_or_owned_partial(*cur_head, *the_empty, *p);
                 if let Some(border) = alg.find_closest_on_field(the_empty, filtering_fun) {
                     let horz_first = self.random.borrow_mut().gen();
                     let mut appendix = build_path(the_empty, &border, horz_first);
@@ -166,9 +167,7 @@ impl Bot for KillerBot {
                 // we couldn't find an empty destination this time
                 Move::Stop
             }
-        };
-
-        the_move
+        }
     }
 }
 
@@ -214,7 +213,7 @@ impl<'a> KillerBotAlg<'a> {
 
     /// to close the path we are interested in not any border or owned,
     /// but we need to find such cell, direction to that will not cross our body
-    fn border_or_owned_partial(&self, o: &P, a: &P, c: &P) -> bool {
+    fn border_or_owned_partial(&self, o: P, a: P, c: P) -> bool {
         let cell = self.cells(&c);
         (cell != Cell::Empty) && may_be_selected(o, a, c)
     }

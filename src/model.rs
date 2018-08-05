@@ -229,7 +229,7 @@ impl GameStateView {
             // make sure there is no hanging \n
             if i != m - 1 { result.push('\n'); }
         }
-        return result;
+        result
     }
 }
 
@@ -301,15 +301,15 @@ impl GameState {
         for (k, mut body) in &mut players_map {
             if !body.is_empty() {
                 // current point, start with the head
-                let mut cp = Some(body[0]);
+                let mut cur_point = Some(body[0]);
                 let ct = ('a' as u8) + k; // the player's tail char
-                while cp.is_some() {
+                while cur_point.is_some() {
                     // seek for lowercase letter around the current point
                     // if something found, then add the point to the current body
                     // otherwise consider the body fully built
-                    let t = cp.unwrap();
+                    let cp = cur_point.unwrap();
                     let point0 = neigh.iter().map(|Point(ni, nj)| {
-                        let Point(mut i, mut j) = t;
+                        let Point(mut i, mut j) = cp;
                         i = bound(i + ni, 0, (m - 1) as i16);
                         j = bound(j + nj, 0, (n - 1) as i16);
                         Point(i, j)
@@ -320,7 +320,7 @@ impl GameState {
                     if point0.is_some() {
                         body.insert(0, point0.unwrap());
                     }
-                    cp = point0;
+                    cur_point = point0;
                 }
             } else {
                 // what to do if the body is empty?
