@@ -62,6 +62,8 @@ impl Bot for RandomBot {
                 let ri = destination.0 - head.0;
                 let rj = destination.1 - head.1;
                 let r = self.random.borrow_mut().gen_range(0, 4 + ri.abs() + rj.abs());
+
+                #[cfg_attr(feature="cargo-clippy", allow(collapsible_if))]
                 let mv = if r < 4 {
                     select_move(r)
                 } else if r < 4 + ri.abs() {
