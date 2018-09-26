@@ -1,4 +1,3 @@
-#![feature(rust_2018_preview)]
 #![crate_type = "lib"]
 
 extern crate conv;

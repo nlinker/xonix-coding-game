@@ -1,4 +1,3 @@
-#![feature(rust_2018_preview)]
 extern crate xcg;
 
 use xcg::utils::Trim;

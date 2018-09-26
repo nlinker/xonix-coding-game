@@ -3,7 +3,7 @@ name = "xcg-coding-game"
 version = "0.1.0"
 keywords = ["xcg", "coding", "game"]
 authors = ["Nick Linker <nlinker@gmail.com>"]
-cargo-features = ["edition"]
+edition = "2018"
 
 [lib]
 name = "xcg"

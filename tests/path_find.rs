@@ -1,4 +1,3 @@
-#![feature(rust_2018_preview)]
 extern crate xcg;
 extern crate priority_queue;
 
@@ -69,7 +68,7 @@ fn test_a_star() {
                 println!("{}", prettify_game_state(&gs, false, false));
                 println!("{:?}", ol);
             });
-            let mut logger: Option<fn(&PriorityQueue<P, Weight>, &HashMap<P, P>)> = None;
+            let logger: Option<fn(&PriorityQueue<P, Weight>, &HashMap<P, P>)> = None;
             a_star_find(&src, &dst, is_boundary, heuristic, logger)
         };
 

@@ -1,10 +1,10 @@
-#![feature(rust_2018_preview)]
 extern crate core;
 extern crate rand;
 extern crate itertools;
 extern crate xcg;
 
 use xcg::utils::Trim;
+use xcg::model::Point;
 use xcg::model::*;
 use xcg::bot::TestBot;
 
@@ -422,7 +422,7 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
     // reset bot's state
     for k in 0..bots.len() {
         let idx = gs.reordering[k] as usize;
-        let mut cgs = &mut pgss[idx];
+        let cgs = &mut pgss[idx];
         make_game_state_view(cgs, &gs, idx);
         bots[idx].reset(cgs, idx, 0u64);
     }
@@ -433,7 +433,7 @@ fn play<B: Bot>(gs: &GameState, bots: &mut [B]) -> GameState {
         let mut moves = vec![];
         for k in 0..bots.len() {
             let idx = gs.reordering[k] as usize;
-            let mut cgs = &mut pgss[idx];
+            let cgs = &mut pgss[idx];
             make_game_state_view(cgs, &gs, idx);
             let mv = bots[idx].do_move(cgs);
             moves.push(mv);

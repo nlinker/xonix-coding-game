@@ -192,7 +192,7 @@ pub fn a_star_find(src: &P, dst: &P,
             let g_score = cur_w.g_score + if np != cur_p { 1 } else { 0 };
             let f_score = g_score + heuristic(&np, &dst);
             let parent = cur_p;
-            let mut w_opt = open_list.get_priority(&np).map(|w| w.clone());
+            let w_opt = open_list.get_priority(&np).map(|w| w.clone());
             match w_opt {
                 Some(w) => {
                     if g_score < w.g_score {
