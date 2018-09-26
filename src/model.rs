@@ -1,9 +1,5 @@
 #![allow(unused)]
 
-extern crate core;
-extern crate itertools;
-extern crate regex;
-
 use rand::prelude::{Rng, RngCore, FromEntropy};
 use rand::isaac::IsaacRng;
 use core::str;

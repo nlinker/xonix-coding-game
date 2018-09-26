@@ -1,5 +1,3 @@
-extern crate rand;
-
 use crate::model::Bot;
 use crate::model::Move;
 use crate::model::GameStateView;

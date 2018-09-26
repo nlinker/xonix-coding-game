@@ -1,5 +1,3 @@
-extern crate xcg;
-
 use xcg::utils::Trim;
 
 #[test]

@@ -1,8 +1,3 @@
-extern crate core;
-extern crate rand;
-extern crate itertools;
-extern crate xcg;
-
 use xcg::utils::Trim;
 use xcg::model::Point;
 use xcg::model::*;

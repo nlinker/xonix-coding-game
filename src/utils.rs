@@ -1,14 +1,11 @@
-extern crate core;
-extern crate rand_core;
-extern crate itertools;
-extern crate rand;
-
 use std::cmp;
 use std::fmt;
 use std::iter::Iterator;
-use self::itertools::Itertools;
-use self::core::num::Wrapping as W;
+use itertools::Itertools;
+use core::num::Wrapping as W;
 
+// /home/nick/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src/libcore/num/mod.rs:141
+// use
 //fn undef() -> ! {
 //    unimplemented!()
 //}

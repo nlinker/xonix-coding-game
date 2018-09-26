@@ -1,11 +1,5 @@
 #![allow(unused)]
 
-extern crate rand;
-extern crate xcg;
-extern crate console;
-extern crate crossbeam;
-extern crate priority_queue;
-
 use rand::IsaacRng;
 use rand::prelude::RngCore;
 use std::cell::RefCell;
