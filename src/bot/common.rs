@@ -1,9 +1,9 @@
 use crate::model::Move;
 use crate::utils::Bound;
-use std::cmp::Ordering;
 use priority_queue::PriorityQueue;
-use std::fmt;
-use std::fmt::Write;
+use core::fmt;
+use core::fmt::Write;
+use core::cmp::Ordering;
 use std::collections::HashMap;
 
 /// Decartes coordinates, (x, y)

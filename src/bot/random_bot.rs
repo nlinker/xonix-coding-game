@@ -2,11 +2,11 @@ use crate::model::Bot;
 use crate::model::Cell;
 use crate::model::Move;
 use crate::model::Point;
+use crate::model::GameStateView;
+use crate::utils::Bound;
+use std::cell::RefCell;
 use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
-use std::cell::RefCell;
-use crate::utils::Bound;
-use crate::model::GameStateView;
 
 #[derive(Clone, Debug)]
 pub struct RandomBot {

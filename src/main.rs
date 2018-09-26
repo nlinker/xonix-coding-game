@@ -1,23 +1,20 @@
 #![allow(unused)]
 
+use std::cell::RefCell;
+use std::time::Duration;
+use std::collections::HashMap;
+use std::cmp::Ordering;
+use std::thread;
+use priority_queue::PriorityQueue;
 use rand::IsaacRng;
 use rand::prelude::RngCore;
-use std::cell::RefCell;
 
 use xcg::model::*;
 use xcg::bot::KillerBot;
-use std::thread;
-use std::time::Duration;
-
 use xcg::utils::Trim;
-use xcg::model::*;
-use xcg::model::prettify_game_state;
 use xcg::bot::common::{P, a_star_find};
 use xcg::bot::common::distance;
 use xcg::bot::common::Weight;
-use priority_queue::PriorityQueue;
-use std::collections::HashMap;
-use std::cmp::Ordering;
 
 fn main() {
     let random = RefCell::new(IsaacRng::new_from_u64(234));

@@ -6,18 +6,18 @@ use crate::bot::common::find_closest;
 use crate::bot::common::may_be_selected;
 use crate::bot::common::P;
 use crate::bot::common::Weight;
-use core::cmp;
 use crate::model::Bot;
 use crate::model::Cell;
 use crate::model::Move;
 use crate::model::Point;
+use crate::model::GameStateView;
+use core::cmp;
 use priority_queue::PriorityQueue;
 use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use crate::model::GameStateView;
 
 #[derive(Clone, Debug)]
 pub struct KillerBot {
@@ -70,7 +70,6 @@ impl Bot for KillerBot {
     }
 
     fn do_move(&mut self, gs: &GameStateView) -> Move {
-
         self.last_me = self.cur_me.clone();
         let (cur_me, all) = player_bodies(gs, self.idx);
         self.all = all;
@@ -84,7 +83,7 @@ impl Bot for KillerBot {
             idx: self.idx,
             cur_me: &self.cur_me,
             all: &self.all,
-            random: self.random.clone()
+            random: self.random.clone(),
         };
 
         let cur_head = self.cur_me.last().unwrap();
@@ -172,7 +171,6 @@ impl Bot for KillerBot {
 }
 
 impl<'a> KillerBotAlg<'a> {
-
     fn find_closest_on_field(&self, src: &P, predicate: impl Fn(&P) -> bool) -> Option<P> {
         let m = self.gs.field.m as i16;
         let n = self.gs.field.n as i16;
@@ -227,7 +225,7 @@ impl<'a> KillerBotAlg<'a> {
             if k != self.idx {
                 enemy = find_closest(m, n, cur_head, radius, |p| {
                     let k_len = self.all[k].len();
-                    k_len > 1 && self.all[k][0..k_len-2].contains(p)
+                    k_len > 1 && self.all[k][0..k_len - 2].contains(p)
                 });
                 if enemy.is_some() {
                     break;

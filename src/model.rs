@@ -1,11 +1,5 @@
 #![allow(unused)]
 
-use rand::prelude::{Rng, RngCore, FromEntropy};
-use rand::isaac::IsaacRng;
-use core::str;
-use regex::{Regex, Match as RegexMatch};
-use itertools::free::join;
-use itertools::Itertools;
 use std::str::FromStr;
 use std::fmt;
 use std::fmt::Formatter;
@@ -21,6 +15,12 @@ use std::borrow::Borrow;
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use console::Style;
+use core::str;
+use rand::prelude::{Rng, RngCore, FromEntropy};
+use rand::isaac::IsaacRng;
+use regex::{Regex, Match as RegexMatch};
+use itertools::free::join;
+use itertools::Itertools;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Cell {

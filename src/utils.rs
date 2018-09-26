@@ -1,10 +1,8 @@
-use std::cmp;
 use std::fmt;
-use std::iter::Iterator;
 use itertools::Itertools;
+use core::cmp;
 use core::num::Wrapping as W;
 
-// /home/nick/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src/libcore/num/mod.rs:141
 // use
 //fn undef() -> ! {
 //    unimplemented!()

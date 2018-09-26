@@ -1,9 +1,9 @@
 use crate::model::Bot;
 use crate::model::Move;
 use crate::model::GameStateView;
-use rand::prelude::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
+use rand::prelude::Rng;
 
 // TODO move it to ../tests/test_bot.rs
 #[derive(Clone, Eq, PartialEq, Debug)]

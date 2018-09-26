@@ -1,16 +1,15 @@
+use std::collections::HashSet;
+use std::borrow::BorrowMut;
+use std::rc::Rc;
+use std::cell::RefCell;
+use core::iter::FromIterator;
+use rand::prelude::{Rng, RngCore};
+use rand::IsaacRng;
+
 use xcg::utils::Trim;
 use xcg::model::Point;
 use xcg::model::*;
 use xcg::bot::TestBot;
-
-use rand::prelude::{Rng, RngCore};
-use rand::IsaacRng;
-
-use std::collections::HashSet;
-use core::iter::FromIterator;
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[test]
 fn test_border() {
