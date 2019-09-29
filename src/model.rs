@@ -18,6 +18,7 @@ use console::Style;
 use core::str;
 use rand::prelude::{Rng, RngCore, FromEntropy};
 use rand::isaac::IsaacRng;
+use rand::SeedableRng;
 use regex::{Regex, Match as RegexMatch};
 use itertools::free::join;
 use itertools::Itertools;
@@ -136,7 +137,7 @@ impl Player {
     }
 }
 
-impl fmt::Debug for Bot {
+impl fmt::Debug for dyn Bot {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "bot") }
 }
 
@@ -146,7 +147,7 @@ impl fmt::Display for ParseError {
 
 impl Error for ParseError {
     fn description(&self) -> &str { "Cannot parse the string to GameState" }
-    fn cause(&self) -> Option<&Error> { None }
+    fn cause(&self) -> Option<&dyn Error> { None }
 }
 
 impl Ord for Point {
@@ -574,7 +575,7 @@ pub fn create_default_permutation(np: usize) -> Vec<u8> {
     (0..np).map(|x| x as u8).collect()
 }
 
-pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut RngCore) -> Vec<u8> {
+pub fn copy_shuffled_permutation(xs: &Vec<u8>, random: &mut dyn RngCore) -> Vec<u8> {
     let mut tmp = xs.clone();
     random.shuffle(tmp.as_mut_slice());
     return tmp;
@@ -588,7 +589,7 @@ pub fn create_origins_n(height: usize, width: usize, np: usize) -> Vec<Point> {
 pub fn create_origins(height: usize, width: usize, perm: &Vec<u8>) -> Vec<Point> {
     let m = height as i16;
     let n = width as i16;
-    let b2p: Box<Fn(usize) -> Point> = Box::new(move |l| border_to_point(height, width, l));
+    let b2p: Box<dyn Fn(usize) -> Point> = Box::new(move |l| border_to_point(height, width, l));
     fn index_of(xs: &Vec<u8>, x: u8) -> usize {
         xs.iter().position(|&z| { z == x }).unwrap()
     }
@@ -705,7 +706,7 @@ pub fn calculate_flood_area(field: &Field, body: &Vec<Point>) -> Vec<Point> {
     let boundary: HashSet<Point> = body.iter().cloned().collect();
     let mut areas: Vec<HashSet<Point>> = vec![];
 
-    let in_areas: Box<Fn(Point, &Vec<HashSet<Point>>) -> bool> = Box::new(|p, areas| {
+    let in_areas: Box<dyn Fn(Point, &Vec<HashSet<Point>>) -> bool> = Box::new(|p, areas| {
         areas.iter().any(|ps| ps.contains(&p))
     });
 
@@ -896,7 +897,7 @@ pub fn create_match<T: AsRef<str>>(
     random_seed: Option<u64>
 ) -> Match {
     let np = player_names.len();
-    let mut initializer_rng = random_seed.map(|seed| IsaacRng::new_from_u64(seed));
+    let mut initializer_rng = random_seed.map(|seed| IsaacRng::seed_from_u64(seed));
     let field = create_default_field(height, width);
     let perm0 = create_default_permutation(np);
     let origin_perm = match initializer_rng.borrow_mut() {
@@ -937,7 +938,7 @@ pub fn create_match<T: AsRef<str>>(
     Match { duration, ratio, game_state, random_seed }
 }
 
-pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&GameState)) -> Replay {
+pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &dyn Fn(&GameState)) -> Replay {
     let nb = bots.len();
     debug_assert_eq!(nb, the_match.game_state.reordering.len());
     debug_assert_eq!(nb, the_match.game_state.players.len());
@@ -951,7 +952,7 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
     }
     // random generator will supply seeds for bots
     let mut rng = the_match.random_seed
-        .map(|seed| IsaacRng::new_from_u64(seed))
+        .map(|seed| IsaacRng::seed_from_u64(seed))
         .unwrap_or_else(|| IsaacRng::from_entropy());
     let mut random_seed_gen = move || rng.next_u64();
     // build client views of the game state
@@ -1007,7 +1008,7 @@ pub fn run_match(the_match: &mut Match, bots: &mut [Box<dyn Bot>], logger: &Fn(&
 }
 
 /// returns the final game state after the replay run
-pub fn run_replay(replay: &Replay, logger: &Fn(&GameState)) -> GameState {
+pub fn run_replay(replay: &Replay, logger: &dyn Fn(&GameState)) -> GameState {
     let mut gs: GameState = create_match(
         replay.height,
         replay.width,

@@ -6,6 +6,7 @@ use crate::model::GameStateView;
 use crate::utils::Bound;
 use std::cell::RefCell;
 use rand::IsaacRng;
+use rand::SeedableRng;
 use rand::prelude::{FromEntropy, Rng};
 
 #[derive(Clone, Debug)]
@@ -23,7 +24,7 @@ impl Bot for RandomBot {
         self.m = gs.field.m;
         self.n = gs.field.n;
         self.idx = idx;
-        self.random = RefCell::new(IsaacRng::new_from_u64(seed));
+        self.random = RefCell::new(IsaacRng::seed_from_u64(seed));
         self.destination = None;
         self.last_move = Move::Stop;
     }

@@ -8,6 +8,7 @@ use std::thread;
 use priority_queue::PriorityQueue;
 use rand::IsaacRng;
 use rand::prelude::RngCore;
+use rand::SeedableRng;
 
 use xcg::model::*;
 use xcg::bot::KillerBot;
@@ -17,7 +18,7 @@ use xcg::bot::common::distance;
 use xcg::bot::common::Weight;
 
 fn main() {
-    let random = RefCell::new(IsaacRng::new_from_u64(234));
+    let random = RefCell::new(IsaacRng::seed_from_u64(234));
     let m = 32;
     let n = 54;
 //    let m = 32;
@@ -42,7 +43,7 @@ fn main() {
     };
 
     let count = 100_000;
-    let random = RefCell::new(IsaacRng::new_from_u64(234));
+    let random = RefCell::new(IsaacRng::seed_from_u64(234));
     let mut seeds = Vec::with_capacity(count);
     for it in 0..count {
         let match_k_seed = random.borrow_mut().next_u64();

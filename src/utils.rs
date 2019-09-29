@@ -29,12 +29,12 @@ pub fn replace_indent<'a>(src: &'a str, new_indent: &'a str) -> String {
         .map(|s| indent_width(s))
         .min()
         .unwrap_or(0);
-    let f1: Box<Fn(&str) -> String> = get_add_function(new_indent);
-    let f2: Box<Fn(&str) -> String> = get_cut_function(min_common_indent);
+    let f1: Box<dyn Fn(&str) -> String> = get_add_function(new_indent);
+    let f2: Box<dyn Fn(&str) -> String> = get_cut_function(min_common_indent);
     reindent(&lines, src.len(), f1, f2)
 }
 
-pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String + 'a> {
+pub fn get_add_function<'a>(indent: &'a str) -> Box<dyn Fn(&str) -> String + 'a> {
     if indent.is_empty() {
         Box::new(move |line: &str| { line.to_string() })
     } else {
@@ -47,7 +47,7 @@ pub fn get_add_function<'a>(indent: &'a str) -> Box<Fn(&str) -> String + 'a> {
     }
 }
 
-pub fn get_cut_function(indent: usize) -> Box<Fn(&str) -> String> {
+pub fn get_cut_function(indent: usize) -> Box<dyn Fn(&str) -> String> {
     Box::new(move |line: &str| {
         // ensure all our values >= 0
         let n = cmp::max(1, line.len()) - 1;

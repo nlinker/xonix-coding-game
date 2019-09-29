@@ -15,6 +15,7 @@ use core::cmp;
 use priority_queue::PriorityQueue;
 use rand::IsaacRng;
 use rand::prelude::{FromEntropy, Rng};
+use rand::SeedableRng;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -64,7 +65,7 @@ impl Bot for KillerBot {
     fn reset(&mut self, gs: &GameStateView, idx: usize, seed: u64) {
         // must be like self.* = Bot2::new(idx).*;
         *self = KillerBot::new(idx);
-        self.random = Rc::new(RefCell::new(IsaacRng::new_from_u64(seed)));
+        self.random = Rc::new(RefCell::new(IsaacRng::seed_from_u64(seed)));
         self.m = gs.field.m;
         self.n = gs.field.n;
     }

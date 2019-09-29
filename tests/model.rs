@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use core::iter::FromIterator;
 use rand::prelude::{Rng, RngCore};
 use rand::IsaacRng;
+use rand::SeedableRng;
 
 use xcg::utils::Trim;
 use xcg::model::Point;
@@ -62,7 +63,7 @@ fn test_create_origins() {
 fn test_permutations() {
     let perm0 = create_default_permutation(4);
     assert_eq!(vec![0, 1, 2, 3], perm0);
-    let mut random = IsaacRng::new_from_u64(123);
+    let mut random = IsaacRng::seed_from_u64(123);
     assert_eq!(vec![2, 0, 1, 3], copy_shuffled_permutation(&perm0, &mut random));
     assert_eq!(vec![3, 2, 1, 0], copy_shuffled_permutation(&perm0, &mut random));
     assert_eq!(vec![2, 1, 3, 0], copy_shuffled_permutation(&perm0, &mut random));
@@ -268,7 +269,7 @@ fn test_game_state_view() {
 #[test]
 fn test_run_match_with_reordering() {
     let match_seed = Some(69);
-    let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+    let random = Rc::new(RefCell::new(IsaacRng::seed_from_u64(123)));
 
     let a = test_bot_r(0, random.clone(), "dlu");
     let b = test_bot_r(1, random.clone(), "llurr");
@@ -308,7 +309,7 @@ fn test_run_match_with_reordering() {
 
 #[test]
 fn test_run_replay() {
-    let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+    let random = Rc::new(RefCell::new(IsaacRng::seed_from_u64(123)));
     let a = test_bot_r(0, random.clone(), "dllll");
     let b = test_bot_r(1, random.clone(), "luuuu");
     let c = test_bot_r(2, random.clone(), "urrrr");
@@ -330,7 +331,7 @@ fn test_run_replay() {
 
 #[test]
 fn test_run_tournament() {
-    let random = Rc::new(RefCell::new(IsaacRng::new_from_u64(123)));
+    let random = Rc::new(RefCell::new(IsaacRng::seed_from_u64(123)));
     let a = test_bot_r(0, random.clone(), "dlu");
     let b = test_bot_r(1, random.clone(), "lur");
     let c = test_bot_r(2, random.clone(), "urd");
